@@ -14,10 +14,7 @@ describe('venues integration', () => {
   });
 
   afterAll(async () => {
-    // rollback migrations to keep DB clean for repeated runs
-    const knex = getKnex();
-    await knex.migrate.rollback();
-    // close knex pool
+    // close knex pool (don't rollback in test env - let DB state persist for other tests)
     await destroyKnex();
   });
 

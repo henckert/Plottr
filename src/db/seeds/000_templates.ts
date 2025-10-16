@@ -1,16 +1,8 @@
 import { Knex } from 'knex';
 
 export async function seed(knex: Knex): Promise<void> {
-  const exists = await knex.schema.hasTable('templates');
-  if (!exists) {
-    await knex.schema.createTable('templates', (table) => {
-      table.increments('id').primary();
-      table.string('template_id').notNullable().unique();
-      table.string('name').notNullable();
-      table.jsonb('meta');
-      table.timestamps(true, true);
-    });
-  }
+  // Delete in reverse FK order
+  await knex('templates').del();
 
   const templates = [
     { template_id: 'rugby-full', name: 'Rugby (100x70)', meta: { length_m: 100, width_m: 70, sport: 'rugby' } },
@@ -21,9 +13,12 @@ export async function seed(knex: Knex): Promise<void> {
   ];
 
   for (const t of templates) {
-    const existing = await knex('templates').where('template_id', t.template_id).first();
-    if (!existing) {
-      await knex('templates').insert({ template_id: t.template_id, name: t.name, meta: JSON.stringify(t.meta) });
-    }
+    await knex('templates').insert({ 
+      template_id: t.template_id, 
+      name: t.name, 
+      meta: JSON.stringify(t.meta),
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
   }
 }

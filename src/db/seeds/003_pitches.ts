@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 
 export async function seed(knex: Knex): Promise<void> {
-  // Deletes ALL existing entries
+  // Deletes in reverse FK dependency order (cascades delete pitch_segments)
   await knex('pitches').del();
 
   // Inserts seed entries using ST_GeomFromText for PostGIS geometry
