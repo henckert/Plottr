@@ -57,11 +57,17 @@ npm run dev
 - 409 (conflict): FK constraint violations, duplicate unique fields
 
 ### 1.3 Auth middleware stub
-- Accept `Authorization: Bearer dev-token` in headers
-- Toggle off in prod (ENV var)
-- Add 401/403 tests for protected endpoints
+- ✅ Accept `Authorization: Bearer dev-token` in headers
+- ✅ Toggle off in prod via AUTH_REQUIRED env var
+- ✅ Add 401/403 tests for protected endpoints
+- ✅ All endpoints under /api now require auth (globally applied)
+- Middleware extracts user context and attaches to req.user
+- Dev mode (AUTH_REQUIRED=false): allows any Bearer token or no token
+- Prod mode (AUTH_REQUIRED=true): validates token strictly
 
 **Gate:** `npm test` all green locally and in CI
+**STATUS:** COMPLETE (38/38 tests passing)
+- Commit: fa11a64
 
 ---
 
