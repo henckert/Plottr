@@ -3,8 +3,8 @@ services:
     image: postgis/postgis:16-3.4
     container_name: plottr_postgres
     environment:
-      POSTGRES_USER: plottr
-      POSTGRES_PASSWORD: plottrpass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: plottr_dev
     ports:
       - "5432:5432"
