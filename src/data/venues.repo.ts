@@ -8,7 +8,16 @@ export class VenuesRepo {
   }
 
   async listAll() {
-    return this.knex('venues').select('*');
+    return this.knex('venues').select('*').orderBy('id', 'asc');
+  }
+
+  async listAllPaginated(limit: number) {
+    // Fetch with limit, ordered by updated_at (for cursor pagination)
+    return this.knex('venues')
+      .select('*')
+      .orderBy('updated_at', 'asc')
+      .orderBy('id', 'asc')
+      .limit(limit);
   }
 
   async getById(id: number) {
