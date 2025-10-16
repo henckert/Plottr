@@ -8,8 +8,10 @@ export const VenueSchema = z.object({
   center_point: z.any().optional(),
   bbox: z.any().optional(),
   tz: z.string().optional(),
-  visibility: z.string().optional(),
-  published_at: z.string().optional(),
+  published: z.boolean().optional(),
+  version_token: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 });
 
 export const VenuesListResponseSchema = z.object({ data: z.array(VenueSchema) });
