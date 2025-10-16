@@ -22,4 +22,14 @@ export class PitchesRepo {
     const [created] = await this.knex('pitches').insert(payload).returning('*');
     return created;
   }
+
+  async update(id: number, payload: any) {
+    // Filter out undefined values so we don't update columns with null
+    const updateData = Object.fromEntries(Object.entries(payload).filter(([_k, v]) => v !== undefined));
+    const [updated] = await this.knex('pitches')
+      .where({ id })
+      .update({ ...updateData, updated_at: this.knex.fn.now() })
+      .returning('*');
+    return updated || null;
+  }
 }

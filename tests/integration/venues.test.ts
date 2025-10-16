@@ -126,4 +126,81 @@ describe('venues integration', () => {
     // either 400 or 500 depending on error handling
     expect([400, 500]).toContain(res.status);
   });
+
+  test('PUT /api/venues/:id updates venue with 200', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue to update
+    const listRes = await request(app).get('/api/venues').expect(200);
+    const venue = listRes.body.data[0];
+    const venueId = venue.id;
+    const currentToken = venue.version_token || 'null-token';
+    // update venue with If-Match header
+    const res = await request(app)
+      .put(`/api/venues/${venueId}`)
+      .set('If-Match', currentToken)
+      .send({
+        name: `Updated Venue ${Date.now()}`,
+        address: '456 Oak Ave',
+      })
+      .expect(200);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body.data.id).toBe(venueId);
+    expect(res.body.data.name).toMatch(/Updated Venue/);
+    expect(res.body.data.address).toBe('456 Oak Ave');
+  });
+
+  test('PUT /api/venues/:id returns 400 on missing If-Match header', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue
+    const listRes = await request(app).get('/api/venues').expect(200);
+    const venueId = listRes.body.data[0].id;
+    // attempt update without If-Match header
+    const res = await request(app)
+      .put(`/api/venues/${venueId}`)
+      .send({
+        name: 'Updated Venue',
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.message).toMatch(/If-Match/i);
+  });
+
+  test('PUT /api/venues/:id returns 409 on stale version_token', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue
+    const listRes = await request(app).get('/api/venues').expect(200);
+    const venue = listRes.body.data[0];
+    const venueId = venue.id;
+    // attempt update with wrong version_token
+    const res = await request(app)
+      .put(`/api/venues/${venueId}`)
+      .set('If-Match', 'stale-or-wrong-token')
+      .send({
+        name: 'Updated Venue',
+      })
+      .expect(409);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.message).toMatch(/version mismatch|stale/i);
+  });
+
+  test('PUT /api/venues/:id returns 404 for non-existent venue', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // attempt update on non-existent ID
+    const res = await request(app)
+      .put('/api/venues/99999')
+      .set('If-Match', 'any-token')
+      .send({
+        name: 'Updated Venue',
+      })
+      .expect(404);
+    expect(res.body).toHaveProperty('error');
+  });
 });

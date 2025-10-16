@@ -1,4 +1,5 @@
 import { SessionsRepo } from '../data/sessions.repo';
+import { AppError } from '../errors';
 
 export class SessionsService {
   private repo = new SessionsRepo();
@@ -61,5 +62,18 @@ export class SessionsService {
 
   async create(payload: any) {
     return this.repo.create(payload);
+  }
+
+  async update(id: number, ifMatch: string, payload: any) {
+    const current = await this.repo.getById(id);
+    if (!current) throw new AppError('Session not found', 404, 'NOT_FOUND');
+    // Allow "null-token" to represent null version_token (for clients with null tokens)
+    const tokenMatches = ifMatch === 'null-token' ? current.version_token === null : current.version_token === ifMatch;
+    if (!tokenMatches) {
+      throw new AppError('Resource version mismatch (stale version_token)', 409, 'CONFLICT');
+    }
+    const updated = await this.repo.update(id, payload);
+    if (!updated) throw new AppError('Session not found after update', 404, 'NOT_FOUND');
+    return updated;
   }
 }

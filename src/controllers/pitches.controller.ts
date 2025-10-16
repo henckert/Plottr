@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PitchesService } from '../services/pitches.service';
-import { PitchesListResponseSchema, PitchCreateSchema } from '../schemas/pitches.schema';
+import { PitchesListResponseSchema, PitchCreateSchema, PitchUpdateSchema } from '../schemas/pitches.schema';
 import { AppError } from '../errors';
 
 const service = new PitchesService();
@@ -40,6 +40,35 @@ export async function createPitch(req: Request, res: Response, next: NextFunctio
 
     const created = await service.create(parsed.data);
     return res.status(201).json({ data: created });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updatePitch(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const ifMatch = req.headers['if-match'];
+
+    if (!ifMatch) {
+      return res.status(400).json({
+        error: {
+          message: 'If-Match header is required for PUT requests',
+          code: 'MISSING_IF_MATCH',
+        },
+      });
+    }
+
+    const parsed = PitchUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        details: parsed.error.errors,
+      });
+    }
+
+    const updated = await service.update(id, ifMatch as string, parsed.data);
+    return res.json({ data: updated });
   } catch (err) {
     next(err);
   }

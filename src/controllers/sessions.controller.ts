@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionsService } from '../services/sessions.service';
-import { SessionsListResponseSchema, SessionCreateSchema } from '../schemas/sessions.schema';
+import { SessionsListResponseSchema, SessionCreateSchema, SessionUpdateSchema } from '../schemas/sessions.schema';
 import { AppError } from '../errors';
 
 const service = new SessionsService();
@@ -39,6 +39,35 @@ export async function createSession(req: Request, res: Response, next: NextFunct
 
     const created = await service.create(parsed.data);
     return res.status(201).json({ data: created });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSession(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    const ifMatch = req.headers['if-match'];
+
+    if (!ifMatch) {
+      return res.status(400).json({
+        error: {
+          message: 'If-Match header is required for PUT requests',
+          code: 'MISSING_IF_MATCH',
+        },
+      });
+    }
+
+    const parsed = SessionUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        details: parsed.error.errors,
+      });
+    }
+
+    const updated = await service.update(id, ifMatch as string, parsed.data);
+    return res.json({ data: updated });
   } catch (err) {
     next(err);
   }

@@ -1,4 +1,6 @@
 ﻿import express, { NextFunction, Request, Response } from 'express';
+import { AppError } from './errors';
+import { errorHandler } from './errors/middleware';
 import apiRoutes from './routes';
 
 export default function createApp() {
@@ -13,7 +15,10 @@ export default function createApp() {
   app.use('/api', apiRoutes);
 
   // Error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof AppError) {
+      return errorHandler(err, req, res, next);
+    }
     // eslint-disable-next-line no-console
     console.error('Unhandled error', err);
     res.status(err?.status ?? 500).json({ error: { message: 'Internal Server Error' } });

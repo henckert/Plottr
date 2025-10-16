@@ -1,4 +1,5 @@
 import { PitchesRepo } from '../data/pitches.repo';
+import { AppError } from '../errors';
 
 export class PitchesService {
   private repo = new PitchesRepo();
@@ -63,5 +64,18 @@ export class PitchesService {
 
   async create(payload: any) {
     return this.repo.create(payload);
+  }
+
+  async update(id: number, ifMatch: string, payload: any) {
+    const current = await this.repo.getById(id);
+    if (!current) throw new AppError('Pitch not found', 404, 'NOT_FOUND');
+    // Allow "null-token" to represent null version_token (for clients with null tokens)
+    const tokenMatches = ifMatch === 'null-token' ? current.version_token === null : current.version_token === ifMatch;
+    if (!tokenMatches) {
+      throw new AppError('Resource version mismatch (stale version_token)', 409, 'CONFLICT');
+    }
+    const updated = await this.repo.update(id, payload);
+    if (!updated) throw new AppError('Pitch not found after update', 404, 'NOT_FOUND');
+    return updated;
   }
 }

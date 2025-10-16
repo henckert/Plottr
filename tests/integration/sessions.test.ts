@@ -161,4 +161,79 @@ describe('sessions integration', () => {
       .expect(400);
     expect(res.body).toHaveProperty('error');
   });
+
+  test('PUT /api/sessions/:id updates session with 200', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a session to update
+    const listRes = await request(app).get('/api/sessions').expect(200);
+    const session = listRes.body.data[0];
+    const sessionId = session.id;
+    const currentToken = session.version_token || 'null-token';
+    // update session with If-Match header
+    const res = await request(app)
+      .put(`/api/sessions/${sessionId}`)
+      .set('If-Match', currentToken)
+      .send({
+        notes: `Updated Session ${Date.now()}`,
+      })
+      .expect(200);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body.data.id).toBe(sessionId);
+    expect(res.body.data.notes).toMatch(/Updated Session/);
+  });
+
+  test('PUT /api/sessions/:id returns 400 on missing If-Match header', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a session
+    const listRes = await request(app).get('/api/sessions').expect(200);
+    const sessionId = listRes.body.data[0].id;
+    // attempt update without If-Match header
+    const res = await request(app)
+      .put(`/api/sessions/${sessionId}`)
+      .send({
+        notes: 'Updated Session',
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.message).toMatch(/If-Match/i);
+  });
+
+  test('PUT /api/sessions/:id returns 409 on stale version_token', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a session
+    const listRes = await request(app).get('/api/sessions').expect(200);
+    const session = listRes.body.data[0];
+    const sessionId = session.id;
+    // attempt update with wrong version_token
+    const res = await request(app)
+      .put(`/api/sessions/${sessionId}`)
+      .set('If-Match', 'stale-or-wrong-token')
+      .send({
+        notes: 'Updated Session',
+      })
+      .expect(409);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.message).toMatch(/version mismatch|stale/i);
+  });
+
+  test('PUT /api/sessions/:id returns 404 for non-existent session', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // attempt update on non-existent ID
+    const res = await request(app)
+      .put('/api/sessions/99999')
+      .set('If-Match', 'any-token')
+      .send({
+        notes: 'Updated Session',
+      })
+      .expect(404);
+    expect(res.body).toHaveProperty('error');
+  });
 });

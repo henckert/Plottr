@@ -1,5 +1,6 @@
 import { VenuesRepo } from '../data/venues.repo';
-import type { Venue } from '../schemas/venues.schema';
+import { AppError } from '../errors';
+import type { Venue, VenueUpdate } from '../schemas/venues.schema';
 
 export class VenuesService {
   private repo = new VenuesRepo();
@@ -62,5 +63,18 @@ export class VenuesService {
 
   async create(payload: Partial<Venue>): Promise<Venue> {
     return this.repo.create(payload as Venue);
+  }
+
+  async update(id: number, ifMatch: string, payload: VenueUpdate): Promise<Venue> {
+    const current = await this.repo.getById(id);
+    if (!current) throw new AppError('Venue not found', 404, 'NOT_FOUND');
+    // Allow "null-token" to represent null version_token (for clients with null tokens)
+    const tokenMatches = ifMatch === 'null-token' ? current.version_token === null : current.version_token === ifMatch;
+    if (!tokenMatches) {
+      throw new AppError('Resource version mismatch (stale version_token)', 409, 'CONFLICT');
+    }
+    const updated = await this.repo.update(id, payload as Venue);
+    if (!updated) throw new AppError('Venue not found after update', 404, 'NOT_FOUND');
+    return updated;
   }
 }
