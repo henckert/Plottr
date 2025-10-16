@@ -49,4 +49,7 @@ export async function seed(knex: Knex): Promise<void> {
       updated_at: new Date(),
     },
   ]);
+
+  // Reset sequence to next available ID
+  await knex.raw('SELECT setval(\'pitches_id_seq\', 4)');
 }

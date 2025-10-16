@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { VenuesService } from '../services/venues.service';
-import { VenuesListResponseSchema } from '../schemas/venues.schema';
+import { VenuesListResponseSchema, VenueCreateSchema } from '../schemas/venues.schema';
 import { AppError } from '../errors';
 
 const service = new VenuesService();
@@ -31,8 +31,15 @@ export async function getVenue(req: Request, res: Response, next: NextFunction) 
 
 export async function createVenue(req: Request, res: Response, next: NextFunction) {
   try {
-    const payload = req.body;
-    const created = await service.create(payload);
+    const parsed = VenueCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        details: parsed.error.errors,
+      });
+    }
+
+    const created = await service.create(parsed.data);
     return res.status(201).json({ data: created });
   } catch (err) {
     next(err);
