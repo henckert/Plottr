@@ -96,4 +96,69 @@ describe('sessions integration', () => {
     expect(res.body).toHaveProperty('data');
     expect(Array.isArray(res.body.data)).toBe(true);
   });
+
+  test('POST /api/sessions creates session with 201', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // first, get a venue_id and pitch_id from seeded data
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    const pitchRes = await request(app).get('/api/pitches').expect(200);
+    const pitchId = pitchRes.body.data[0].id;
+    // create session
+    const now = new Date();
+    const startTs = new Date(now.getTime() + 86400000).toISOString(); // tomorrow
+    const endTs = new Date(now.getTime() + 90000000).toISOString(); // tomorrow + 1 hour
+    const res = await request(app)
+      .post('/api/sessions')
+      .send({
+        venue_id: venueId,
+        pitch_id: pitchId,
+        start_ts: startTs,
+        end_ts: endTs,
+        notes: 'Test Session',
+      })
+      .expect(201);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body.data).toHaveProperty('id');
+    expect(res.body.data.venue_id).toBe(venueId);
+    expect(res.body.data.pitch_id).toBe(pitchId);
+    // verify audit fields are ISO strings
+    expect(typeof res.body.data.created_at).toBe('string');
+    expect(typeof res.body.data.updated_at).toBe('string');
+  });
+
+  test('POST /api/sessions validates required fields (400 on missing venue_id)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // create session without venue_id
+    const res = await request(app)
+      .post('/api/sessions')
+      .send({
+        pitch_id: 1,
+        // venue_id is missing
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  test('POST /api/sessions validates datetime format (400 on invalid start_ts)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // create session with invalid datetime
+    const res = await request(app)
+      .post('/api/sessions')
+      .send({
+        venue_id: venueId,
+        start_ts: 'not-a-datetime',
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+  });
 });

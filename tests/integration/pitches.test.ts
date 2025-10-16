@@ -83,4 +83,66 @@ describe('pitches integration', () => {
     expect(Array.isArray(filteredRes.body.data)).toBe(true);
     expect(filteredRes.body.data.length).toBeGreaterThan(0);
   });
+
+  test('POST /api/pitches creates pitch with 201', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // first, get a venue_id from seeded data
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // create pitch
+    const timestamp = Date.now();
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        name: `Test Pitch ${timestamp}`,
+        code: `TP${timestamp}`,
+        sport: 'rugby',
+        level: 'senior',
+        status: 'draft',
+      })
+      .expect(201);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body.data).toHaveProperty('id');
+    expect(res.body.data.name).toBe(`Test Pitch ${timestamp}`);
+    expect(res.body.data.venue_id).toBe(venueId);
+    // verify audit fields are ISO strings
+    expect(typeof res.body.data.created_at).toBe('string');
+    expect(typeof res.body.data.updated_at).toBe('string');
+  });
+
+  test('POST /api/pitches validates required fields (400 on missing name)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // create pitch without name
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        // name is missing
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  test('POST /api/pitches validates required fields (400 on missing venue_id)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // create pitch without venue_id
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        name: 'Test Pitch',
+        // venue_id is missing
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+  });
 });

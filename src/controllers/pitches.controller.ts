@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PitchesService } from '../services/pitches.service';
-import { PitchesListResponseSchema } from '../schemas/pitches.schema';
+import { PitchesListResponseSchema, PitchCreateSchema } from '../schemas/pitches.schema';
 import { AppError } from '../errors';
 
 const service = new PitchesService();
@@ -30,8 +30,15 @@ export async function getPitch(req: Request, res: Response, next: NextFunction) 
 
 export async function createPitch(req: Request, res: Response, next: NextFunction) {
   try {
-    const payload = req.body;
-    const created = await service.create(payload);
+    const parsed = PitchCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        details: parsed.error.errors,
+      });
+    }
+
+    const created = await service.create(parsed.data);
     return res.status(201).json({ data: created });
   } catch (err) {
     next(err);

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionsService } from '../services/sessions.service';
-import { SessionsListResponseSchema } from '../schemas/sessions.schema';
+import { SessionsListResponseSchema, SessionCreateSchema } from '../schemas/sessions.schema';
 import { AppError } from '../errors';
 
 const service = new SessionsService();
@@ -29,8 +29,15 @@ export async function getSession(req: Request, res: Response, next: NextFunction
 
 export async function createSession(req: Request, res: Response, next: NextFunction) {
   try {
-    const payload = req.body;
-    const created = await service.create(payload);
+    const parsed = SessionCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'VALIDATION_ERROR',
+        details: parsed.error.errors,
+      });
+    }
+
+    const created = await service.create(parsed.data);
     return res.status(201).json({ data: created });
   } catch (err) {
     next(err);
