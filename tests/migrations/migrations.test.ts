@@ -1,3 +1,5 @@
+// Ensure we have a sensible default for test DB (avoid SASL errors when env missing)
+process.env.DATABASE_URL_TEST = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/plottr_test';
 const knexConfig = require('../../src/db/knexfile');
 const Knex = require('knex');
 

@@ -22,6 +22,162 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Template'
+  /venues:
+    get:
+      summary: List venues
+      responses:
+        '200':
+          description: A list of venues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Venue'
+    post:
+      summary: Create a venue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Venue'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Venue'
+  /venues/{id}:
+    get:
+      summary: Get a venue by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Venue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Venue'
+  /pitches:
+    get:
+      summary: List pitches
+      responses:
+        '200':
+          description: A list of pitches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pitch'
+    post:
+      summary: Create a pitch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pitch'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Pitch'
+  /pitches/{id}:
+    get:
+      summary: Get a pitch by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pitch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Pitch'
+  /sessions:
+    get:
+      summary: List sessions
+      responses:
+        '200':
+          description: A list of sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+    post:
+      summary: Create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
+  /sessions/{id}:
+    get:
+      summary: Get a session by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
 components:
   schemas:
     Template:
@@ -41,3 +197,54 @@ components:
         updated_at:
           type: string
           format: date-time
+    Venue:
+      type: object
+      properties:
+        id:
+          type: integer
+        club_id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        center_point:
+          type: object
+        bbox:
+          type: object
+        tz:
+          type: string
+        visibility:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+    Pitch:
+      type: object
+      properties:
+        id:
+          type: integer
+        venue_id:
+          type: integer
+        name:
+          type: string
+        geometry:
+          type: object
+        template_id:
+          type: string
+        rotation_deg:
+          type: number
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        venue_id:
+          type: integer
+        pitch_id:
+          type: integer
+        starts_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object

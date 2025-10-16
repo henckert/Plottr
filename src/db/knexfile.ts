@@ -6,13 +6,13 @@ const seedsDir = path.resolve(__dirname, 'seeds');
 module.exports = {
   development: {
     client: 'pg',
-    connection: process.env.DATABASE_URL || 'postgres://localhost/plottr_dev',
+    connection: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/plottr_dev',
     migrations: { directory: migrationsDir },
     seeds: { directory: seedsDir },
   },
   test: {
     client: 'pg',
-    connection: process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || 'postgres://localhost/plottr_test',
+    connection: process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/plottr_test',
     migrations: { directory: migrationsDir },
     seeds: { directory: seedsDir },
   },
