@@ -10,8 +10,9 @@ export async function listTemplates(req: Request, res: Response, next: NextFunct
     // Runtime validate the response shape
     const parsed = TemplatesListResponse.safeParse({ data });
     if (!parsed.success) {
-      // If runtime validation fails, throw an error so middleware can handle it
-      const err = new Error('Response validation failed');
+      // If runtime validation fails, throw AppError with code VALIDATION_ERROR
+      const { AppError } = await import('../errors');
+      const err = new AppError('Response validation failed', 500, 'VALIDATION_ERROR');
       // attach validation details for debugging
       (err as any).details = parsed.error.format();
       throw err;

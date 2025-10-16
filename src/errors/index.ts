@@ -8,3 +8,7 @@ export class AppError extends Error {
     this.code = code;
   }
 }
+
+export function validationError(message = 'Validation failed') {
+  return new AppError(message, 500, 'VALIDATION_ERROR');
+}
