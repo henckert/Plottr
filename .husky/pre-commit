@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run quick local guards: type checks + unit tests only (integration runs in CI)
+npm run check:types && npm run test:unit

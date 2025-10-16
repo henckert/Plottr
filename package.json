@@ -11,8 +11,20 @@
     "migrate:rollback": "knex --knexfile src/db/knexfile.ts migrate:rollback",
     "seed": "knex --knexfile src/db/knexfile.ts seed:run",
     "test": "jest",
-    "test:migrations": "jest tests/migrations/migrations.test.ts"
+  "test:unit": "jest --runInBand --testPathIgnorePatterns=\"tests/integration|tests/migrations\" --passWithNoTests",
+    "test:migrations": "jest tests/migrations/migrations.test.ts",
+    "gen:types": "openapi-typescript openapi/plottr.yaml --output src/types/openapi.ts",
+    "check:types": "tsc -p tsconfig.build.json --noEmit"
   },
+  "lint-staged": {
+    "src/**/*.{ts,js}": [
+      "npm run check:types"
+    ],
+    "tests/**/*.{ts,js}": [
+      "npm test -- --silent"
+    ]
+  },
+  "prepare": "husky install",
   "dependencies": {
     "@mapbox/mapbox-sdk": "^0.13.0",
     "aws-sdk": "^2.0.0",
@@ -21,6 +33,7 @@
     "jsonwebtoken": "^9.0.0",
     "knex": "^2.0.0",
     "objection": "^3.0.0",
+    "openai": "^4.10.0",
     "pg": "^8.0.0"
   },
   "devDependencies": {
@@ -32,9 +45,10 @@
     "@types/pg": "^8.6.6",
     "@types/supertest": "^2.0.12",
     "eslint": "^8.0.0",
+    "husky": "^8.0.0",
     "jest": "^29.0.0",
+    "lint-staged": "^14.0.0",
     "node-fetch": "^2.6.7",
-    "openai": "^4.10.0",
     "openapi-typescript": "^7.10.1",
     "supertest": "^6.3.3",
     "ts-jest": "^29.0.0",
