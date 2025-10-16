@@ -1,5 +1,5 @@
 ﻿import express, { NextFunction, Request, Response } from 'express';
-import templatesRoutes from './routes/templates.routes';
+import apiRoutes from './routes';
 
 export default function createApp() {
   const app = express();
@@ -9,7 +9,8 @@ export default function createApp() {
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
   // API routes
-  app.use('/api', templatesRoutes);
+  // mount the top-level router which includes /templates, /venues, /pitches, /sessions, /geocode
+  app.use('/api', apiRoutes);
 
   // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,7 +1,11 @@
 import { getKnex } from './knex';
 
 export class VenuesRepo {
-  private knex = getKnex();
+  private knex: any;
+
+  constructor() {
+    this.knex = getKnex();
+  }
 
   async listAll() {
     return this.knex('venues').select('*');

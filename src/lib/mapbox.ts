@@ -13,7 +13,18 @@ if (!token) {
   console.warn('MAPBOX_TOKEN not set; geocoding will be unavailable');
 }
 
-const client = token ? mbx({ accessToken: token }) : null;
+let client: any = null;
+if (token) {
+  try {
+    client = mbx({ accessToken: token });
+  } catch (err) {
+    // If the provided token is malformed/invalid, log and continue with geocoding disabled.
+    // This prevents CI/tests from crashing when a placeholder or bad token is present.
+    // eslint-disable-next-line no-console
+    console.warn('Failed to initialize Mapbox client; geocoding disabled.', (err as any)?.message || err);
+    client = null;
+  }
+}
 
 export const geocoder = client ? geocoding(client) : null;
 
