@@ -236,4 +236,15 @@ describe('sessions integration', () => {
       .expect(404);
     expect(res.body).toHaveProperty('error');
   });
+
+  test('GET /api/sessions with valid Bearer token succeeds', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    const res = await request(app)
+      .get('/api/sessions')
+      .set('Authorization', 'Bearer test-token')
+      .expect(200);
+    expect(res.body).toHaveProperty('data');
+  });
 });

@@ -9,5 +9,7 @@ export function getConfig() {
     NODE_ENV: process.env.NODE_ENV || 'development',
     OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-5-mini',
     MAPBOX_TOKEN: process.env.MAPBOX_TOKEN || null,
+    AUTH_REQUIRED: process.env.AUTH_REQUIRED === 'true' ? true : false,
+    DEV_TOKEN: process.env.DEV_TOKEN || 'dev-token-placeholder',
   } as const;
 }
