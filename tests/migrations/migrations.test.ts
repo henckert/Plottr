@@ -1,11 +1,11 @@
-import knexConfig = require('../../src/db/knexfile');
-import Knex from 'knex';
+const knexConfig = require('../../src/db/knexfile');
+const Knex = require('knex');
 
 describe('migrations', () => {
-  let knex: Knex;
+  let knex: any;
 
   beforeAll(() => {
-    const config = knexConfig.test as Knex.Config;
+    const config: any = knexConfig.test || knexConfig['test'];
     knex = Knex(config);
   });
 

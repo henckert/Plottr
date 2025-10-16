@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info:
+  title: Plottr API
+  version: '0.1.0'
+  description: >-
+    OpenAPI 3 spec for Plottr — venue & pitch mapping API (MVP). This is a
+    minimal placeholder and will be expanded with endpoints for clubs,
+    venues, pitches, templates and sessions.
+paths: {}
+components: {}

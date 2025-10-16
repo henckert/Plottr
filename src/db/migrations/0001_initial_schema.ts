@@ -21,6 +21,15 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamps(true, true);
   });
 
+  // Templates table: canonical pitch templates used by seeds and the app
+  await knex.schema.createTable('templates', (table) => {
+    table.increments('id').primary();
+    table.string('template_id').notNullable().unique();
+    table.string('name').notNullable();
+    table.jsonb('meta');
+    table.timestamps(true, true);
+  });
+
   await knex.schema.createTable('user_club_roles', (table) => {
     table.increments('id').primary();
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
