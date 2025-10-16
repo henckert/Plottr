@@ -100,7 +100,7 @@ updated: 2025-10-16
   - [ ] 3.4 Add API contract tests (supertest + Jest) to validate responses match OpenAPI schema
   - [ ] 3.5 Add Jest-based API contract tests that exercise the generated server stub and validate OpenAPI conformance
 
-- [x] 4.0 Core API implementation (venues complete; pitches/sessions endpoints exist but not tested)
+- [x] 4.0 Core API implementation (venues complete; pitches/sessions endpoints validated)
   - [x] 4.1 Implement `src/api/venues.controller.ts`: GET list, GET by id with Zod validation and date normalization
   - [x] 4.2 Implement `src/api/pitches.controller.ts`: GET list, GET by id (schema/repo/service/controller/routes all in place)
   - [x] 4.3 Implement `src/api/sessions.controller.ts`: GET list, GET by id (schema/repo/service/controller/routes all in place)
