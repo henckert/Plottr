@@ -1,65 +1,11 @@
 name: CI
-on: [push, pull_request]
-
-jobs:
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check:types
-      - run: npm run test:unit --if-present
-
-  integration:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        ports: ['5432:5432']
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: plottr
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
-    env:
-      NODE_ENV: test
-      DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5432/plottr_test
-      MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - name: Create test DB
-        run: psql -h localhost -U postgres -d postgres -c "CREATE DATABASE plottr_test;"
-        env:
-          PGPASSWORD: postgres
-      - name: Enable extensions
-        run: |
-          psql -h localhost -U postgres -d plottr_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-          psql -h localhost -U postgres -d plottr_test -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-        env:
-          PGPASSWORD: postgres
-      - run: npx knex --knexfile src/db/knexfile.ts --env test migrate:latest
-      - run: npx knex --knexfile src/db/knexfile.ts --env test seed:run
-      - run: npm run test:integration
-name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -83,6 +29,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5432/plottr_test
+      MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
       PGPASSWORD: postgres
       PGUSER: postgres
       PGHOST: localhost
@@ -100,6 +47,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Type check
+        run: npm run check:types
 
       - name: Create test DB and enable extensions
         run: |
