@@ -38,6 +38,7 @@
   "node-fetch": "^2.6.7",
   "@types/node-fetch": "^2.6.2",
     "@types/knex": "^0.16.1",
+    "openai": "^4.10.0",
     "@types/pg": "^8.6.6",
     "eslint": "^8.0.0"
   }

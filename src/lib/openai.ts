@@ -1,30 +1,36 @@
 import { getConfig } from '../config';
-import fetch from 'node-fetch';
+import OpenAI from 'openai';
 
 const cfg = getConfig();
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || null;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || undefined;
 
-if (!OPENAI_API_KEY) {
-  // We'll allow the app to run without a key for now; calls will fail at runtime.
-}
+const client = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-export async function createChatCompletion(messages: Array<{ role: string; content: string }>, opts?: { model?: string }) {
+export type ChatMessage = { role: string; content: string };
+
+export type ChatChoice = { role?: string | null; content?: string | null };
+
+export type ChatCompletionResult = {
+  id?: string;
+  model?: string;
+  choices: ChatChoice[];
+  raw?: any;
+};
+
+export async function createChatCompletion(messages: ChatMessage[], opts?: { model?: string }): Promise<ChatCompletionResult> {
   const model = opts?.model || cfg.OPENAI_MODEL || 'gpt-5-mini';
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({ model, messages }),
+  const res = await client.chat.completions.create({
+    model,
+    messages: messages.map((m) => ({ role: m.role as any, content: m.content })),
   });
 
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`OpenAI API error: ${res.status} ${txt}`);
-  }
+  const choices = (res.choices ?? []).map((c: any) => ({
+    role: c.message?.role ?? null,
+    content: c.message?.content ?? null,
+  }));
 
-  return res.json();
+  return { id: res.id, model: res.model, choices, raw: res };
 }
+
