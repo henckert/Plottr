@@ -1,4 +1,7 @@
 import { TemplatesRepo } from '../data/templates.repo';
+import { components } from '../types/openapi';
+
+type Template = components['schemas']['Template'];
 
 export class TemplatesService {
   private repo: TemplatesRepo;
@@ -7,7 +10,7 @@ export class TemplatesService {
     this.repo = new TemplatesRepo();
   }
 
-  async list() {
+  async list(): Promise<Template[]> {
     // Business rules go here (filtering, transformations, caching)
     const rows = await this.repo.listAll();
     return rows.map((r: any) => ({
@@ -17,6 +20,6 @@ export class TemplatesService {
       meta: r.meta,
       created_at: r.created_at,
       updated_at: r.updated_at,
-    }));
+    } as Template));
   }
 }
