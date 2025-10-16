@@ -28,6 +28,7 @@ export class PitchesService {
       rotation_deg: r.rotation_deg,
       template_id: r.template_id,
       status: r.status,
+      version_token: r.version_token,
       created_at: toIso(r.created_at),
       updated_at: toIso(r.updated_at),
     }));
@@ -57,6 +58,7 @@ export class PitchesService {
       rotation_deg: row.rotation_deg,
       template_id: row.template_id,
       status: row.status,
+      version_token: row.version_token,
       created_at: toIso(row.created_at),
       updated_at: toIso(row.updated_at),
     };

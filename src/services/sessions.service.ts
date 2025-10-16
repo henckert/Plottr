@@ -27,6 +27,7 @@ export class SessionsService {
       end_ts: toIso(r.end_ts),
       notes: r.notes,
       share_token: r.share_token,
+      version_token: r.version_token,
       created_at: toIso(r.created_at),
       updated_at: toIso(r.updated_at),
     }));
@@ -55,6 +56,7 @@ export class SessionsService {
       end_ts: toIso(row.end_ts),
       notes: row.notes,
       share_token: row.share_token,
+      version_token: row.version_token,
       created_at: toIso(row.created_at),
       updated_at: toIso(row.updated_at),
     };

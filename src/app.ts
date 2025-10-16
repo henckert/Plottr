@@ -16,12 +16,8 @@ export default function createApp() {
 
   // Error handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    if (err instanceof AppError) {
-      return errorHandler(err, req, res, next);
-    }
-    // eslint-disable-next-line no-console
-    console.error('Unhandled error', err);
-    res.status(err?.status ?? 500).json({ error: { message: 'Internal Server Error' } });
+    // Route all errors through the centralized error handler
+    errorHandler(err, req, res, next);
   });
 
   return app;
