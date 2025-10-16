@@ -2,16 +2,46 @@ import { Request, Response, NextFunction } from 'express';
 import { PitchesService } from '../services/pitches.service';
 import { PitchesListResponseSchema, PitchCreateSchema, PitchUpdateSchema } from '../schemas/pitches.schema';
 import { AppError } from '../errors';
+import { validatePaginationParams, paginateResults } from '../lib/pagination';
 
 const service = new PitchesService();
 
 export async function listPitches(req: Request, res: Response, next: NextFunction) {
   try {
     const venueId = req.params.venueId ? Number(req.params.venueId) : undefined;
-    const data = await service.list(venueId);
-    const parsed = PitchesListResponseSchema.safeParse({ data });
+    
+    // Parse and validate pagination params
+    const cursor = req.query.cursor as string | undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+    let params;
+    try {
+      params = validatePaginationParams(cursor, limit);
+    } catch (err) {
+      return res.status(400).json({
+        error: 'INVALID_PAGINATION',
+        message: (err as Error).message,
+      });
+    }
+
+    // Fetch limit+1 to detect if there are more pages
+    const data = await service.listPaginated(venueId, params.limit! + 1, params.cursor);
+
+    // Extract ID and sort value from items
+    const getIdValue = (item: any) => item.id;
+    const getSortValue = (item: any) => item.updated_at;
+
+    // Paginate and format response
+    const paginated = paginateResults(data, params, getIdValue, getSortValue);
+
+    const parsed = PitchesListResponseSchema.safeParse({ data: paginated.data });
     if (!parsed.success) throw new AppError('VALIDATION_ERROR', 500, parsed.error.message);
-    return res.json(parsed.data);
+
+    return res.json({
+      data: paginated.data,
+      next_cursor: paginated.next_cursor,
+      has_more: paginated.has_more,
+    });
   } catch (err) {
     next(err);
   }

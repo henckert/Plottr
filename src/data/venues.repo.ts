@@ -11,13 +11,23 @@ export class VenuesRepo {
     return this.knex('venues').select('*').orderBy('id', 'asc');
   }
 
-  async listAllPaginated(limit: number) {
-    // Fetch with limit, ordered by updated_at (for cursor pagination)
-    return this.knex('venues')
-      .select('*')
-      .orderBy('updated_at', 'asc')
-      .orderBy('id', 'asc')
-      .limit(limit);
+  async listAllPaginated(limit: number, cursorParams?: { id: number; sortValue: any }) {
+    let query = this.knex('venues').select('*').orderBy('updated_at', 'asc').orderBy('id', 'asc');
+
+    // Apply cursor filtering if provided
+    if (cursorParams) {
+      // Forward pagination: return records where (updated_at > cursor_sort) 
+      // OR (updated_at = cursor_sort AND id > cursor_id)
+      query = query.where((builder: any) => {
+        builder
+          .where('updated_at', '>', cursorParams.sortValue)
+          .orWhere((b: any) =>
+            b.where('updated_at', '=', cursorParams.sortValue).andWhere('id', '>', cursorParams.id)
+          );
+      });
+    }
+
+    return query.limit(limit);
   }
 
   async getById(id: number) {

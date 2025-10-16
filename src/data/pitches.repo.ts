@@ -16,6 +16,21 @@ function geoJsonToWkt(geojson: any): string {
   return `POLYGON((${coords}))`;
 }
 
+const SELECT_FIELDS = [
+  'id',
+  'venue_id',
+  'name',
+  'code',
+  'sport',
+  'level',
+  'rotation_deg',
+  'template_id',
+  'status',
+  'version_token',
+  'created_at',
+  'updated_at'
+];
+
 export class PitchesRepo {
   private knex: any;
 
@@ -26,41 +41,46 @@ export class PitchesRepo {
   async listAll(venueId?: number) {
     const q = this.knex('pitches')
       .select(
-        'id',
-        'venue_id',
-        'name',
-        'code',
-        'sport',
-        'level',
+        ...SELECT_FIELDS,
         // Use ST_AsGeoJSON to convert PostGIS geometry to GeoJSON
         this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
-        'rotation_deg',
-        'template_id',
-        'status',
-        'version_token',
-        'created_at',
-        'updated_at'
       );
     if (venueId) q.where({ venue_id: venueId });
     return q;
   }
 
+  async listAllPaginated(venueId: number | undefined, limit: number, cursorParams?: { id: number; sortValue: any }) {
+    let query = this.knex('pitches')
+      .select(
+        ...SELECT_FIELDS,
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
+      )
+      .orderBy('updated_at', 'asc')
+      .orderBy('id', 'asc');
+
+    if (venueId) {
+      query = query.where({ venue_id: venueId });
+    }
+
+    // Apply cursor filtering if provided
+    if (cursorParams) {
+      query = query.where((builder: any) => {
+        builder
+          .where('updated_at', '>', cursorParams.sortValue)
+          .orWhere((b: any) =>
+            b.where('updated_at', '=', cursorParams.sortValue).andWhere('id', '>', cursorParams.id)
+          );
+      });
+    }
+
+    return query.limit(limit);
+  }
+
   async getById(id: number) {
     const row = await this.knex('pitches')
       .select(
-        'id',
-        'venue_id',
-        'name',
-        'code',
-        'sport',
-        'level',
-        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
-        'rotation_deg',
-        'template_id',
-        'status',
-        'version_token',
-        'created_at',
-        'updated_at'
+        ...SELECT_FIELDS,
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry")
       )
       .where({ id })
       .first();
@@ -77,19 +97,8 @@ export class PitchesRepo {
     const [created] = await this.knex('pitches')
       .insert(data)
       .returning([
-        'id',
-        'venue_id',
-        'name',
-        'code',
-        'sport',
-        'level',
+        ...SELECT_FIELDS,
         this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
-        'rotation_deg',
-        'template_id',
-        'status',
-        'version_token',
-        'created_at',
-        'updated_at',
       ]);
     return created;
   }
@@ -108,19 +117,8 @@ export class PitchesRepo {
       .where({ id })
       .update({ ...updateData, updated_at: this.knex.fn.now() })
       .returning([
-        'id',
-        'venue_id',
-        'name',
-        'code',
-        'sport',
-        'level',
+        ...SELECT_FIELDS,
         this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
-        'rotation_deg',
-        'template_id',
-        'status',
-        'version_token',
-        'created_at',
-        'updated_at',
       ]);
     return updated || null;
   }

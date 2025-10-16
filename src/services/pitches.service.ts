@@ -1,5 +1,6 @@
 import { PitchesRepo } from '../data/pitches.repo';
 import { AppError } from '../errors';
+import { decodeCursor } from '../lib/pagination';
 
 /**
  * Converts PostGIS geometry output to GeoJSON.
@@ -18,75 +19,61 @@ function convertGeometryToGeoJSON(geom: any): any {
   return geom;
 }
 
+const toIso = (v: any) => {
+  if (v == null) return undefined;
+  if (typeof v === 'string') return v;
+  if (v instanceof Date) return v.toISOString();
+  try {
+    return new Date(v).toISOString();
+  } catch {
+    return String(v);
+  }
+};
+
+const mapRow = (r: any) => ({
+  id: r.id,
+  venue_id: r.venue_id,
+  name: r.name,
+  code: r.code,
+  sport: r.sport,
+  level: r.level,
+  geometry: convertGeometryToGeoJSON(r.geometry),
+  rotation_deg: r.rotation_deg,
+  template_id: r.template_id,
+  status: r.status,
+  version_token: r.version_token,
+  created_at: toIso(r.created_at),
+  updated_at: toIso(r.updated_at),
+});
+
 export class PitchesService {
   private repo = new PitchesRepo();
 
   async list(venueId?: number) {
     const rows = await this.repo.listAll(venueId);
-    const toIso = (v: any) => {
-      if (v == null) return undefined;
-      if (typeof v === 'string') return v;
-      if (v instanceof Date) return v.toISOString();
-      try {
-        return new Date(v).toISOString();
-      } catch {
-        return String(v);
-      }
-    };
+    return rows.map(mapRow);
+  }
 
-    return rows.map((r: any) => ({
-      id: r.id,
-      venue_id: r.venue_id,
-      name: r.name,
-      code: r.code,
-      sport: r.sport,
-      level: r.level,
-      geometry: convertGeometryToGeoJSON(r.geometry),
-      rotation_deg: r.rotation_deg,
-      template_id: r.template_id,
-      status: r.status,
-      version_token: r.version_token,
-      created_at: toIso(r.created_at),
-      updated_at: toIso(r.updated_at),
-    }));
+  async listPaginated(venueId: number | undefined, limit: number, cursor?: string) {
+    let cursorParams;
+    if (cursor) {
+      cursorParams = decodeCursor(cursor);
+    }
+    const rows = await this.repo.listAllPaginated(venueId, limit, cursorParams);
+    return rows.map(mapRow);
   }
 
   async get(id: number) {
     const row = await this.repo.getById(id);
     if (!row) return null;
-    const toIso = (v: any) => {
-      if (v == null) return undefined;
-      if (typeof v === 'string') return v;
-      if (v instanceof Date) return v.toISOString();
-      try {
-        return new Date(v).toISOString();
-      } catch {
-        return String(v);
-      }
-    };
-    return {
-      id: row.id,
-      venue_id: row.venue_id,
-      name: row.name,
-      code: row.code,
-      sport: row.sport,
-      level: row.level,
-      geometry: convertGeometryToGeoJSON(row.geometry),
-      rotation_deg: row.rotation_deg,
-      template_id: row.template_id,
-      status: row.status,
-      version_token: row.version_token,
-      created_at: toIso(row.created_at),
-      updated_at: toIso(row.updated_at),
-    };
+    return mapRow(row);
   }
 
   async create(payload: any) {
     const created = await this.repo.create(payload);
     // Convert geometry to GeoJSON for response
     return {
-      ...created,
-      geometry: convertGeometryToGeoJSON(created.geometry),
+      ...mapRow(created),
     };
   }
 
@@ -101,9 +88,6 @@ export class PitchesService {
     const updated = await this.repo.update(id, payload);
     if (!updated) throw new AppError('Pitch not found after update', 404, 'NOT_FOUND');
     // Convert geometry to GeoJSON for response
-    return {
-      ...updated,
-      geometry: convertGeometryToGeoJSON(updated.geometry),
-    };
+    return mapRow(updated);
   }
 }

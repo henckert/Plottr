@@ -1,5 +1,6 @@
 import { VenuesRepo } from '../data/venues.repo';
 import { AppError } from '../errors';
+import { decodeCursor } from '../lib/pagination';
 import type { Venue, VenueUpdate } from '../schemas/venues.schema';
 
 export class VenuesService {
@@ -37,8 +38,12 @@ export class VenuesService {
     return rows.map((r: any) => this.mapRow(r));
   }
 
-  async listPaginated(limit: number): Promise<Venue[]> {
-    const rows = await this.repo.listAllPaginated(limit);
+  async listPaginated(limit: number, cursor?: string): Promise<Venue[]> {
+    let cursorParams;
+    if (cursor) {
+      cursorParams = decodeCursor(cursor);
+    }
+    const rows = await this.repo.listAllPaginated(limit, cursorParams);
     return rows.map((r: any) => this.mapRow(r));
   }
 

@@ -8,7 +8,24 @@ export class SessionsRepo {
   }
 
   async listAll() {
-    return this.knex('sessions').select('*');
+    return this.knex('sessions').select('*').orderBy('id', 'asc');
+  }
+
+  async listAllPaginated(limit: number, cursorParams?: { id: number; sortValue: any }) {
+    let query = this.knex('sessions').select('*').orderBy('updated_at', 'asc').orderBy('id', 'asc');
+
+    // Apply cursor filtering if provided
+    if (cursorParams) {
+      query = query.where((builder: any) => {
+        builder
+          .where('updated_at', '>', cursorParams.sortValue)
+          .orWhere((b: any) =>
+            b.where('updated_at', '=', cursorParams.sortValue).andWhere('id', '>', cursorParams.id)
+          );
+      });
+    }
+
+    return query.limit(limit);
   }
 
   async getById(id: number) {
