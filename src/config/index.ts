@@ -7,5 +7,6 @@ export function getConfig() {
     PORT: process.env.PORT ? Number(process.env.PORT) : 3000,
     DATABASE_URL: process.env.DATABASE_URL || null,
     NODE_ENV: process.env.NODE_ENV || 'development',
+    OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-5-mini',
   } as const;
 }
