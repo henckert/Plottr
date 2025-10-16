@@ -3,13 +3,39 @@ info:
   title: Plottr API
   version: '0.1.0'
   description: >-
-    OpenAPI 3 spec for Plottr — venue & pitch mapping API (MVP). This is a
-    minimal spec for the Templates endpoint used during early development.
+    OpenAPI 3 spec for Plottr — venue & pitch mapping API (MVP backend).
+    Includes CRUD operations for venues, pitches, and sessions with
+    optimistic concurrency control via version tokens.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.plottr.example.com
+    description: Production server (placeholder)
+
 paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns 200 if backend is alive
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
   /templates:
     get:
       summary: List templates
-      description: Return available pitch templates
+      description: Return available pitch templates (public, no auth required)
+      tags:
+        - Templates
       responses:
         '200':
           description: A list of templates
@@ -22,9 +48,15 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Template'
+
   /venues:
     get:
       summary: List venues
+      description: Get all venues (requires auth in production)
+      tags:
+        - Venues
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: A list of venues
@@ -37,17 +69,24 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Venue'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
     post:
       summary: Create a venue
+      description: Create a new venue (requires auth)
+      tags:
+        - Venues
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Venue'
+              $ref: '#/components/schemas/VenueCreate'
       responses:
         '201':
-          description: Created
+          description: Venue created
           content:
             application/json:
               schema:
@@ -55,9 +94,19 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Venue'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /venues/{id}:
     get:
-      summary: Get a venue by id
+      summary: Get a venue by ID
+      description: Get details of a single venue
+      tags:
+        - Venues
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -66,7 +115,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Venue
+          description: Venue details
           content:
             application/json:
               schema:
@@ -74,9 +123,75 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Venue'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a venue
+      description: Update venue with optimistic concurrency control via If-Match header
+      tags:
+        - Venues
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token of the resource (use "null-token" if null)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueUpdate'
+      responses:
+        '200':
+          description: Venue updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Venue'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Version conflict - stale version_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Resource version mismatch (stale version_token)
+                      code:
+                        type: string
+                        example: CONFLICT
   /pitches:
     get:
       summary: List pitches
+      description: Get all pitches (optionally filtered by venue)
+      tags:
+        - Pitches
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: A list of pitches
@@ -89,17 +204,24 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Pitch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
     post:
       summary: Create a pitch
+      description: Create a new pitch with geometry
+      tags:
+        - Pitches
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pitch'
+              $ref: '#/components/schemas/PitchCreate'
       responses:
         '201':
-          description: Created
+          description: Pitch created
           content:
             application/json:
               schema:
@@ -107,9 +229,19 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Pitch'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /pitches/{id}:
     get:
-      summary: Get a pitch by id
+      summary: Get a pitch by ID
+      description: Get details of a single pitch
+      tags:
+        - Pitches
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -118,7 +250,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Pitch
+          description: Pitch details
           content:
             application/json:
               schema:
@@ -126,9 +258,75 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Pitch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a pitch
+      description: Update pitch with optimistic concurrency control via If-Match header
+      tags:
+        - Pitches
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token of the resource (use "null-token" if null)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PitchUpdate'
+      responses:
+        '200':
+          description: Pitch updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Pitch'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Version conflict - stale version_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Resource version mismatch (stale version_token)
+                      code:
+                        type: string
+                        example: CONFLICT
   /sessions:
     get:
       summary: List sessions
+      description: Get all sessions
+      tags:
+        - Sessions
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: A list of sessions
@@ -141,17 +339,24 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
     post:
       summary: Create a session
+      description: Create a new session for a pitch
+      tags:
+        - Sessions
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Session'
+              $ref: '#/components/schemas/SessionCreate'
       responses:
         '201':
-          description: Created
+          description: Session created
           content:
             application/json:
               schema:
@@ -159,9 +364,19 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /sessions/{id}:
     get:
-      summary: Get a session by id
+      summary: Get a session by ID
+      description: Get details of a single session
+      tags:
+        - Sessions
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -170,7 +385,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Session
+          description: Session details
           content:
             application/json:
               schema:
@@ -178,34 +393,229 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a session
+      description: Update session with optimistic concurrency control via If-Match header
+      tags:
+        - Sessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token of the resource (use "null-token" if null)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionUpdate'
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Version conflict - stale version_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Resource version mismatch (stale version_token)
+                      code:
+                        type: string
+                        example: CONFLICT
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token for API authentication (dev-token in dev mode)
+
+  responses:
+    BadRequestError:
+      description: Bad request - validation failed or missing required fields
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  code:
+                    type: string
+                    example: VALIDATION_ERROR
+
+    UnauthorizedError:
+      description: Missing or invalid Authorization header
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  code:
+                    type: string
+                    example: MISSING_AUTH
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  code:
+                    type: string
+                    example: NOT_FOUND
+
   schemas:
     Template:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         template_id:
           type: string
+          example: rugby_standard
         name:
           type: string
+          example: Standard Rugby
         meta:
           type: object
+          example: { sport: rugby, standard: true }
         created_at:
           type: string
           format: date-time
+          example: '2025-10-16T10:00:00.000Z'
         updated_at:
           type: string
           format: date-time
+          example: '2025-10-16T10:00:00.000Z'
     Venue:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         club_id:
           type: integer
+          example: 1
         name:
           type: string
+          example: Riverside Park
+        address:
+          type: string
+          example: '123 River Road, Dublin 4, Ireland'
+        center_point:
+          type: object
+          description: GeoJSON Point (WGS84)
+          example: { type: Point, coordinates: [-6.2603, 53.3498] }
+        bbox:
+          type: object
+          description: GeoJSON Polygon bounding box (WGS84)
+          example: { type: Polygon, coordinates: [[[-6.2610, 53.3490], [-6.2596, 53.3490], [-6.2596, 53.3506], [-6.2610, 53.3506], [-6.2610, 53.3490]]] }
+        tz:
+          type: string
+          example: Europe/Dublin
+        published:
+          type: boolean
+          example: true
+        version_token:
+          type: string
+          nullable: true
+          example: v001_river_001
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:30:00.000Z'
+      required:
+        - id
+        - club_id
+        - name
+        - created_at
+        - updated_at
+
+    VenueCreate:
+      type: object
+      properties:
+        club_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: New Venue
+        address:
+          type: string
+          example: '456 Oak Ave'
+        center_point:
+          type: object
+          description: Optional GeoJSON Point
+        bbox:
+          type: object
+          description: Optional GeoJSON Polygon bounding box
+        tz:
+          type: string
+          example: Europe/London
+        published:
+          type: boolean
+          example: false
+      required:
+        - club_id
+        - name
+
+    VenueUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Updated Venue Name
         address:
           type: string
         center_point:
@@ -214,37 +624,232 @@ components:
           type: object
         tz:
           type: string
-        visibility:
-          type: string
-        published_at:
-          type: string
-          format: date-time
+        published:
+          type: boolean
+      description: All fields optional (PATCH semantics)
     Pitch:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         venue_id:
           type: integer
+          example: 1
         name:
+          type: string
+          example: Pitch A
+        code:
+          type: string
+          example: PA
+        sport:
+          type: string
+          example: rugby
+        level:
+          type: string
+          example: senior
+        geometry:
+          type: object
+          description: GeoJSON Polygon (WGS84, SRID 4326)
+          example: { type: Polygon, coordinates: [[[-6.2603, 53.3498], [-6.2602, 53.3498], [-6.2602, 53.3499], [-6.2603, 53.3499], [-6.2603, 53.3498]]] }
+        rotation_deg:
+          type: number
+          example: 0
+        template_id:
+          type: string
+          nullable: true
+          example: rugby_standard
+        status:
+          type: string
+          enum: [draft, published]
+          example: draft
+        version_token:
+          type: string
+          nullable: true
+          example: v001_pitch_a_001
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:00:00.000Z'
+      required:
+        - id
+        - venue_id
+        - name
+        - created_at
+        - updated_at
+
+    PitchCreate:
+      type: object
+      properties:
+        venue_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: New Pitch
+        code:
+          type: string
+          example: NP
+        sport:
+          type: string
+          example: football
+        level:
+          type: string
+          example: senior
+        geometry:
+          type: object
+          description: GeoJSON Polygon (WGS84)
+        rotation_deg:
+          type: number
+        template_id:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published]
+          example: draft
+      required:
+        - venue_id
+        - name
+
+    PitchUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        sport:
+          type: string
+        level:
           type: string
         geometry:
           type: object
-        template_id:
-          type: string
         rotation_deg:
           type: number
+        template_id:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published]
+      description: All fields optional (PATCH semantics)
     Session:
       type: object
       properties:
         id:
           type: integer
+          example: 1
+        team_id:
+          type: integer
+          nullable: true
+          example: 1
         venue_id:
           type: integer
+          example: 1
         pitch_id:
           type: integer
-        starts_at:
+          nullable: true
+          example: 1
+        segment_id:
+          type: integer
+          nullable: true
+        start_ts:
           type: string
           format: date-time
-        metadata:
-          type: object
+          nullable: true
+          example: '2025-10-17T10:00:00.000Z'
+        end_ts:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-10-17T11:00:00.000Z'
+        notes:
+          type: string
+          nullable: true
+          example: Team practice
+        share_token:
+          type: string
+          nullable: true
+          example: share_abc123def456
+        version_token:
+          type: string
+          nullable: true
+          example: v001_session_001
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-16T10:00:00.000Z'
+      required:
+        - id
+        - venue_id
+        - created_at
+        - updated_at
+
+    SessionCreate:
+      type: object
+      properties:
+        team_id:
+          type: integer
+          nullable: true
+        venue_id:
+          type: integer
+          example: 1
+        pitch_id:
+          type: integer
+          nullable: true
+        segment_id:
+          type: integer
+          nullable: true
+        start_ts:
+          type: string
+          format: date-time
+          nullable: true
+        end_ts:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        share_token:
+          type: string
+          nullable: true
+      required:
+        - venue_id
+
+    SessionUpdate:
+      type: object
+      properties:
+        team_id:
+          type: integer
+          nullable: true
+        pitch_id:
+          type: integer
+          nullable: true
+        segment_id:
+          type: integer
+          nullable: true
+        start_ts:
+          type: string
+          format: date-time
+          nullable: true
+        end_ts:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        share_token:
+          type: string
+          nullable: true
+      description: All fields optional (PATCH semantics)

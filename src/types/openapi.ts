@@ -4,6 +4,47 @@
  */
 
 export interface paths {
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health check
+         * @description Returns 200 if backend is alive
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Service is healthy */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok?: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/templates": {
         parameters: {
             query?: never;
@@ -13,7 +54,7 @@ export interface paths {
         };
         /**
          * List templates
-         * @description Return available pitch templates
+         * @description Return available pitch templates (public, no auth required)
          */
         get: {
             parameters: {
@@ -52,7 +93,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List venues */
+        /**
+         * List venues
+         * @description Get all venues (requires auth in production)
+         */
         get: {
             parameters: {
                 query?: never;
@@ -73,10 +117,14 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         put?: never;
-        /** Create a venue */
+        /**
+         * Create a venue
+         * @description Create a new venue (requires auth)
+         */
         post: {
             parameters: {
                 query?: never;
@@ -86,11 +134,11 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["Venue"];
+                    "application/json": components["schemas"]["VenueCreate"];
                 };
             };
             responses: {
-                /** @description Created */
+                /** @description Venue created */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -101,6 +149,8 @@ export interface paths {
                         };
                     };
                 };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         delete?: never;
@@ -116,7 +166,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a venue by id */
+        /**
+         * Get a venue by ID
+         * @description Get details of a single venue
+         */
         get: {
             parameters: {
                 query?: never;
@@ -128,7 +181,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Venue */
+                /** @description Venue details */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -139,9 +192,64 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
             };
         };
-        put?: never;
+        /**
+         * Update a venue
+         * @description Update venue with optimistic concurrency control via If-Match header
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Current version_token of the resource (use "null-token" if null) */
+                    "If-Match": string;
+                };
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["VenueUpdate"];
+                };
+            };
+            responses: {
+                /** @description Venue updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Venue"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
+                /** @description Version conflict - stale version_token */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: {
+                                /** @example Resource version mismatch (stale version_token) */
+                                message?: string;
+                                /** @example CONFLICT */
+                                code?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -156,7 +264,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List pitches */
+        /**
+         * List pitches
+         * @description Get all pitches (optionally filtered by venue)
+         */
         get: {
             parameters: {
                 query?: never;
@@ -177,10 +288,14 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         put?: never;
-        /** Create a pitch */
+        /**
+         * Create a pitch
+         * @description Create a new pitch with geometry
+         */
         post: {
             parameters: {
                 query?: never;
@@ -190,11 +305,11 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["Pitch"];
+                    "application/json": components["schemas"]["PitchCreate"];
                 };
             };
             responses: {
-                /** @description Created */
+                /** @description Pitch created */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -205,6 +320,8 @@ export interface paths {
                         };
                     };
                 };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         delete?: never;
@@ -220,7 +337,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a pitch by id */
+        /**
+         * Get a pitch by ID
+         * @description Get details of a single pitch
+         */
         get: {
             parameters: {
                 query?: never;
@@ -232,7 +352,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Pitch */
+                /** @description Pitch details */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -243,9 +363,64 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
             };
         };
-        put?: never;
+        /**
+         * Update a pitch
+         * @description Update pitch with optimistic concurrency control via If-Match header
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Current version_token of the resource (use "null-token" if null) */
+                    "If-Match": string;
+                };
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PitchUpdate"];
+                };
+            };
+            responses: {
+                /** @description Pitch updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Pitch"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
+                /** @description Version conflict - stale version_token */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: {
+                                /** @example Resource version mismatch (stale version_token) */
+                                message?: string;
+                                /** @example CONFLICT */
+                                code?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -260,7 +435,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List sessions */
+        /**
+         * List sessions
+         * @description Get all sessions
+         */
         get: {
             parameters: {
                 query?: never;
@@ -281,10 +459,14 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         put?: never;
-        /** Create a session */
+        /**
+         * Create a session
+         * @description Create a new session for a pitch
+         */
         post: {
             parameters: {
                 query?: never;
@@ -294,11 +476,11 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["Session"];
+                    "application/json": components["schemas"]["SessionCreate"];
                 };
             };
             responses: {
-                /** @description Created */
+                /** @description Session created */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -309,6 +491,8 @@ export interface paths {
                         };
                     };
                 };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
             };
         };
         delete?: never;
@@ -324,7 +508,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a session by id */
+        /**
+         * Get a session by ID
+         * @description Get details of a single session
+         */
         get: {
             parameters: {
                 query?: never;
@@ -336,7 +523,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Session */
+                /** @description Session details */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -347,9 +534,64 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
             };
         };
-        put?: never;
+        /**
+         * Update a session
+         * @description Update session with optimistic concurrency control via If-Match header
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Current version_token of the resource (use "null-token" if null) */
+                    "If-Match": string;
+                };
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SessionUpdate"];
+                };
+            };
+            responses: {
+                /** @description Session updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Session"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequestError"];
+                401: components["responses"]["UnauthorizedError"];
+                404: components["responses"]["NotFoundError"];
+                /** @description Version conflict - stale version_token */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error?: {
+                                /** @example Resource version mismatch (stale version_token) */
+                                message?: string;
+                                /** @example CONFLICT */
+                                code?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -362,45 +604,333 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Template: {
+            /** @example 1 */
             id?: number;
+            /** @example rugby_standard */
             template_id?: string;
+            /** @example Standard Rugby */
             name?: string;
+            /**
+             * @example {
+             *       "sport": "rugby",
+             *       "standard": true
+             *     }
+             */
             meta?: Record<string, never>;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
             created_at?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
             updated_at?: string;
         };
         Venue: {
-            id?: number;
-            club_id?: number;
+            /** @example 1 */
+            id: number;
+            /** @example 1 */
+            club_id: number;
+            /** @example Riverside Park */
+            name: string;
+            /** @example 123 River Road, Dublin 4, Ireland */
+            address?: string;
+            /**
+             * @description GeoJSON Point (WGS84)
+             * @example {
+             *       "type": "Point",
+             *       "coordinates": [
+             *         -6.2603,
+             *         53.3498
+             *       ]
+             *     }
+             */
+            center_point?: Record<string, never>;
+            /**
+             * @description GeoJSON Polygon bounding box (WGS84)
+             * @example {
+             *       "type": "Polygon",
+             *       "coordinates": [
+             *         [
+             *           [
+             *             -6.261,
+             *             53.349
+             *           ],
+             *           [
+             *             -6.2596,
+             *             53.349
+             *           ],
+             *           [
+             *             -6.2596,
+             *             53.3506
+             *           ],
+             *           [
+             *             -6.261,
+             *             53.3506
+             *           ],
+             *           [
+             *             -6.261,
+             *             53.349
+             *           ]
+             *         ]
+             *       ]
+             *     }
+             */
+            bbox?: Record<string, never>;
+            /** @example Europe/Dublin */
+            tz?: string;
+            /** @example true */
+            published?: boolean;
+            /** @example v001_river_001 */
+            version_token?: string | null;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:30:00.000Z
+             */
+            updated_at: string;
+        };
+        VenueCreate: {
+            /** @example 1 */
+            club_id: number;
+            /** @example New Venue */
+            name: string;
+            /** @example 456 Oak Ave */
+            address?: string;
+            /** @description Optional GeoJSON Point */
+            center_point?: Record<string, never>;
+            /** @description Optional GeoJSON Polygon bounding box */
+            bbox?: Record<string, never>;
+            /** @example Europe/London */
+            tz?: string;
+            /** @example false */
+            published?: boolean;
+        };
+        /** @description All fields optional (PATCH semantics) */
+        VenueUpdate: {
+            /** @example Updated Venue Name */
             name?: string;
             address?: string;
             center_point?: Record<string, never>;
             bbox?: Record<string, never>;
             tz?: string;
-            visibility?: string;
-            /** Format: date-time */
-            published_at?: string;
+            published?: boolean;
         };
         Pitch: {
-            id?: number;
-            venue_id?: number;
-            name?: string;
+            /** @example 1 */
+            id: number;
+            /** @example 1 */
+            venue_id: number;
+            /** @example Pitch A */
+            name: string;
+            /** @example PA */
+            code?: string;
+            /** @example rugby */
+            sport?: string;
+            /** @example senior */
+            level?: string;
+            /**
+             * @description GeoJSON Polygon (WGS84, SRID 4326)
+             * @example {
+             *       "type": "Polygon",
+             *       "coordinates": [
+             *         [
+             *           [
+             *             -6.2603,
+             *             53.3498
+             *           ],
+             *           [
+             *             -6.2602,
+             *             53.3498
+             *           ],
+             *           [
+             *             -6.2602,
+             *             53.3499
+             *           ],
+             *           [
+             *             -6.2603,
+             *             53.3499
+             *           ],
+             *           [
+             *             -6.2603,
+             *             53.3498
+             *           ]
+             *         ]
+             *       ]
+             *     }
+             */
             geometry?: Record<string, never>;
-            template_id?: string;
+            /** @example 0 */
             rotation_deg?: number;
+            /** @example rugby_standard */
+            template_id?: string | null;
+            /**
+             * @example draft
+             * @enum {string}
+             */
+            status?: "draft" | "published";
+            /** @example v001_pitch_a_001 */
+            version_token?: string | null;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
+            updated_at: string;
+        };
+        PitchCreate: {
+            /** @example 1 */
+            venue_id: number;
+            /** @example New Pitch */
+            name: string;
+            /** @example NP */
+            code?: string;
+            /** @example football */
+            sport?: string;
+            /** @example senior */
+            level?: string;
+            /** @description GeoJSON Polygon (WGS84) */
+            geometry?: Record<string, never>;
+            rotation_deg?: number;
+            template_id?: string | null;
+            /**
+             * @example draft
+             * @enum {string}
+             */
+            status?: "draft" | "published";
+        };
+        /** @description All fields optional (PATCH semantics) */
+        PitchUpdate: {
+            name?: string;
+            code?: string;
+            sport?: string;
+            level?: string;
+            geometry?: Record<string, never>;
+            rotation_deg?: number;
+            template_id?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "published";
         };
         Session: {
-            id?: number;
-            venue_id?: number;
-            pitch_id?: number;
+            /** @example 1 */
+            id: number;
+            /** @example 1 */
+            team_id?: number | null;
+            /** @example 1 */
+            venue_id: number;
+            /** @example 1 */
+            pitch_id?: number | null;
+            segment_id?: number | null;
+            /**
+             * Format: date-time
+             * @example 2025-10-17T10:00:00.000Z
+             */
+            start_ts?: string | null;
+            /**
+             * Format: date-time
+             * @example 2025-10-17T11:00:00.000Z
+             */
+            end_ts?: string | null;
+            /** @example Team practice */
+            notes?: string | null;
+            /** @example share_abc123def456 */
+            share_token?: string | null;
+            /** @example v001_session_001 */
+            version_token?: string | null;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @example 2025-10-16T10:00:00.000Z
+             */
+            updated_at: string;
+        };
+        SessionCreate: {
+            team_id?: number | null;
+            /** @example 1 */
+            venue_id: number;
+            pitch_id?: number | null;
+            segment_id?: number | null;
             /** Format: date-time */
-            starts_at?: string;
-            metadata?: Record<string, never>;
+            start_ts?: string | null;
+            /** Format: date-time */
+            end_ts?: string | null;
+            notes?: string | null;
+            share_token?: string | null;
+        };
+        /** @description All fields optional (PATCH semantics) */
+        SessionUpdate: {
+            team_id?: number | null;
+            pitch_id?: number | null;
+            segment_id?: number | null;
+            /** Format: date-time */
+            start_ts?: string | null;
+            /** Format: date-time */
+            end_ts?: string | null;
+            notes?: string | null;
+            share_token?: string | null;
         };
     };
-    responses: never;
+    responses: {
+        /** @description Bad request - validation failed or missing required fields */
+        BadRequestError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    error?: {
+                        message?: string;
+                        /** @example VALIDATION_ERROR */
+                        code?: string;
+                    };
+                };
+            };
+        };
+        /** @description Missing or invalid Authorization header */
+        UnauthorizedError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    error?: {
+                        message?: string;
+                        /** @example MISSING_AUTH */
+                        code?: string;
+                    };
+                };
+            };
+        };
+        /** @description Resource not found */
+        NotFoundError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    error?: {
+                        message?: string;
+                        /** @example NOT_FOUND */
+                        code?: string;
+                    };
+                };
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
