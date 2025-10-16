@@ -233,4 +233,121 @@ describe('pitches integration', () => {
       .expect(200);
     expect(res.body).toHaveProperty('data');
   });
+
+  test('POST /api/pitches rejects self-intersecting polygon (400)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // figure-8 polygon (self-intersecting)
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        name: 'Self-Intersecting Pitch',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[0, 0], [1, 1], [1, 0], [0, 1], [0, 0]]],
+        },
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.details || res.body.error).toBeDefined();
+  });
+
+  test('POST /api/pitches rejects clockwise polygon (400)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // clockwise polygon (invalid winding)
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        name: 'Clockwise Pitch',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[0, 1], [1, 1], [1, 0], [0, 0], [0, 1]]],
+        },
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.details || res.body.error).toBeDefined();
+  });
+
+  test('POST /api/pitches rejects polygon with out-of-bounds coordinates (400)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // polygon with longitude > 180 (invalid WGS84)
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        name: 'Out of Bounds Pitch',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[0, 0], [181, 0], [181, 1], [0, 1], [0, 0]]],
+        },
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    expect(res.body.error.details || res.body.error.message || res.body.error).toBeDefined();
+  });
+
+  test('POST /api/pitches accepts valid counter-clockwise polygon', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a venue_id
+    const venueRes = await request(app).get('/api/venues').expect(200);
+    const venueId = venueRes.body.data[0].id;
+    // valid counter-clockwise polygon
+    const timestamp = Date.now();
+    const res = await request(app)
+      .post('/api/pitches')
+      .send({
+        venue_id: venueId,
+        name: `Valid CCW Pitch ${timestamp}`,
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+        },
+      })
+      .expect(201);
+    expect(res.body).toHaveProperty('data');
+    expect(res.body.data.geometry).toBeDefined();
+    expect(res.body.data.geometry.type).toBe('Polygon');
+  });
+
+  test('PUT /api/pitches/:id rejects invalid geometry (400)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
+    const app = createApp();
+    // get a pitch_id with version token
+    const listRes = await request(app).get('/api/pitches').expect(200);
+    const pitch = listRes.body.data[0];
+    // attempt to update with invalid geometry
+    const res = await request(app)
+      .put(`/api/pitches/${pitch.id}`)
+      .set('If-Match', pitch.version_token)
+      .send({
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[[0, 0], [1, 1], [1, 0], [0, 1], [0, 0]]],
+        },
+      })
+      .expect(400);
+    expect(res.body).toHaveProperty('error');
+    // error can be string code or details array
+    expect(res.body.error).toBeDefined();
+  });
 });

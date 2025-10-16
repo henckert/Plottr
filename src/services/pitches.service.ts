@@ -1,6 +1,23 @@
 import { PitchesRepo } from '../data/pitches.repo';
 import { AppError } from '../errors';
 
+/**
+ * Converts PostGIS geometry output to GeoJSON.
+ * PostGIS may return geometry in various formats; we need to handle them.
+ */
+function convertGeometryToGeoJSON(geom: any): any {
+  if (!geom) return undefined;
+  
+  // If it's already a GeoJSON-like object with type and coordinates, return as-is
+  if (geom.type && geom.coordinates) {
+    return geom;
+  }
+  
+  // If it's a string (WKT format), we'd need a parser
+  // For now, return as-is since PostGIS should handle the conversion
+  return geom;
+}
+
 export class PitchesService {
   private repo = new PitchesRepo();
 
@@ -24,7 +41,7 @@ export class PitchesService {
       code: r.code,
       sport: r.sport,
       level: r.level,
-      geometry: r.geometry,
+      geometry: convertGeometryToGeoJSON(r.geometry),
       rotation_deg: r.rotation_deg,
       template_id: r.template_id,
       status: r.status,
@@ -54,7 +71,7 @@ export class PitchesService {
       code: row.code,
       sport: row.sport,
       level: row.level,
-      geometry: row.geometry,
+      geometry: convertGeometryToGeoJSON(row.geometry),
       rotation_deg: row.rotation_deg,
       template_id: row.template_id,
       status: row.status,
@@ -65,7 +82,12 @@ export class PitchesService {
   }
 
   async create(payload: any) {
-    return this.repo.create(payload);
+    const created = await this.repo.create(payload);
+    // Convert geometry to GeoJSON for response
+    return {
+      ...created,
+      geometry: convertGeometryToGeoJSON(created.geometry),
+    };
   }
 
   async update(id: number, ifMatch: string, payload: any) {
@@ -78,6 +100,10 @@ export class PitchesService {
     }
     const updated = await this.repo.update(id, payload);
     if (!updated) throw new AppError('Pitch not found after update', 404, 'NOT_FOUND');
-    return updated;
+    // Convert geometry to GeoJSON for response
+    return {
+      ...updated,
+      geometry: convertGeometryToGeoJSON(updated.geometry),
+    };
   }
 }

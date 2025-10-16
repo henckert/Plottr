@@ -1,5 +1,21 @@
 import { getKnex } from './knex';
 
+/**
+ * Converts GeoJSON coordinates to WKT polygon format for PostGIS.
+ * Expects coordinates in [lon, lat] format (GeoJSON standard).
+ * PostGIS WKT format: POLYGON((lon lat, lon lat, ...))
+ */
+function geoJsonToWkt(geojson: any): string {
+  if (!geojson || geojson.type !== 'Polygon' || !geojson.coordinates[0]) {
+    throw new Error('Invalid GeoJSON Polygon');
+  }
+
+  const coords = geojson.coordinates[0]
+    .map((p: number[]) => `${p[0]} ${p[1]}`)
+    .join(', ');
+  return `POLYGON((${coords}))`;
+}
+
 export class PitchesRepo {
   private knex: any;
 
@@ -8,28 +24,104 @@ export class PitchesRepo {
   }
 
   async listAll(venueId?: number) {
-    const q = this.knex('pitches').select('*');
+    const q = this.knex('pitches')
+      .select(
+        'id',
+        'venue_id',
+        'name',
+        'code',
+        'sport',
+        'level',
+        // Use ST_AsGeoJSON to convert PostGIS geometry to GeoJSON
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
+        'rotation_deg',
+        'template_id',
+        'status',
+        'version_token',
+        'created_at',
+        'updated_at'
+      );
     if (venueId) q.where({ venue_id: venueId });
     return q;
   }
 
   async getById(id: number) {
-    const row = await this.knex('pitches').where({ id }).first();
+    const row = await this.knex('pitches')
+      .select(
+        'id',
+        'venue_id',
+        'name',
+        'code',
+        'sport',
+        'level',
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
+        'rotation_deg',
+        'template_id',
+        'status',
+        'version_token',
+        'created_at',
+        'updated_at'
+      )
+      .where({ id })
+      .first();
     return row || null;
   }
 
   async create(payload: any) {
-    const [created] = await this.knex('pitches').insert(payload).returning('*');
+    // Convert GeoJSON geometry to PostGIS format if provided
+    const data = { ...payload };
+    if (data.geometry) {
+      const wkt = geoJsonToWkt(data.geometry);
+      data.geometry = this.knex.raw(`ST_GeomFromText('${wkt}', 4326)`);
+    }
+    const [created] = await this.knex('pitches')
+      .insert(data)
+      .returning([
+        'id',
+        'venue_id',
+        'name',
+        'code',
+        'sport',
+        'level',
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
+        'rotation_deg',
+        'template_id',
+        'status',
+        'version_token',
+        'created_at',
+        'updated_at',
+      ]);
     return created;
   }
 
   async update(id: number, payload: any) {
     // Filter out undefined values so we don't update columns with null
     const updateData = Object.fromEntries(Object.entries(payload).filter(([_k, v]) => v !== undefined));
+    
+    // Convert GeoJSON geometry to PostGIS format if provided
+    if (updateData.geometry) {
+      const wkt = geoJsonToWkt(updateData.geometry);
+      updateData.geometry = this.knex.raw(`ST_GeomFromText('${wkt}', 4326)`);
+    }
+    
     const [updated] = await this.knex('pitches')
       .where({ id })
       .update({ ...updateData, updated_at: this.knex.fn.now() })
-      .returning('*');
+      .returning([
+        'id',
+        'venue_id',
+        'name',
+        'code',
+        'sport',
+        'level',
+        this.knex.raw("ST_AsGeoJSON(geometry)::jsonb as geometry"),
+        'rotation_deg',
+        'template_id',
+        'status',
+        'version_token',
+        'created_at',
+        'updated_at',
+      ]);
     return updated || null;
   }
 }
