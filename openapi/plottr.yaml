@@ -4,7 +4,40 @@ info:
   version: '0.1.0'
   description: >-
     OpenAPI 3 spec for Plottr — venue & pitch mapping API (MVP). This is a
-    minimal placeholder and will be expanded with endpoints for clubs,
-    venues, pitches, templates and sessions.
-paths: {}
-components: {}
+    minimal spec for the Templates endpoint used during early development.
+paths:
+  /templates:
+    get:
+      summary: List templates
+      description: Return available pitch templates
+      responses:
+        '200':
+          description: A list of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+components:
+  schemas:
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+        template_id:
+          type: string
+        name:
+          type: string
+        meta:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
