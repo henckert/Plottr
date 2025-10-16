@@ -1,18 +1,13 @@
-import knex from 'knex';
-import { getConfig } from '../config';
+﻿import 'dotenv/config';
+import knex, { Knex } from 'knex';
+import config from '../db/knexfile';
 
-let instance: any = null;
+let instance: Knex | null = null;
 
-export function getKnex() {
+export function getKnex(): Knex {
   if (instance) return instance;
-  const cfg = getConfig();
-  // Prefer explicit test URL when running tests
-  const connection = process.env.DATABASE_URL_TEST || cfg.DATABASE_URL || process.env.DATABASE_URL || null;
-  instance = knex({
-    client: 'pg',
-    connection: connection as any,
-    pool: { min: 0, max: 5 },
-  });
+  const env = process.env.NODE_ENV === 'test' ? 'test' : 'development';
+  instance = knex(config[env]);
   return instance;
 }
 

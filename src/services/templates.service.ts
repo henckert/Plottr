@@ -1,4 +1,4 @@
-import { TemplatesRepo } from '../data/templates.repo';
+﻿import { TemplatesRepo } from '../data/templates.repo';
 import { components } from '../types/openapi';
 
 type Template = components['schemas']['Template'];
@@ -23,3 +23,4 @@ export class TemplatesService {
     } as Template));
   }
 }
+

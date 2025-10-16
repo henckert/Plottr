@@ -1,28 +1,31 @@
+// Ensure test DB env is set before importing knex so it picks up the value at module load time
+process.env.DATABASE_URL_TEST = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/plottr_test';
 import request from 'supertest';
-import createApp from '../../src/app';
-import { getConfig } from '../../src/config';
-import { destroyKnex } from '../../src/data/knex';
-import { execSync } from 'child_process';
+import { destroyKnex, getKnex } from '../../src/data/knex';
 
 jest.setTimeout(30000);
 
 describe('templates integration', () => {
-  beforeAll(() => {
-    // ensure test DB env
-    process.env.DATABASE_URL_TEST = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/plottr_test';
-    // run migrations and seeds
-    execSync('npx knex --knexfile src/db/knexfile.ts migrate:latest --env test', { stdio: 'inherit' });
-    execSync('npx knex --knexfile src/db/knexfile.ts seed:run --env test', { stdio: 'inherit' });
+  beforeAll(async () => {
+    // run migrations and seeds programmatically to reuse the same Knex instance
+    const knex = getKnex();
+    await knex.migrate.latest();
+    await knex.seed.run();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     // rollback migrations to keep DB clean for repeated runs
-    execSync('npx knex --knexfile src/db/knexfile.ts migrate:rollback --env test', { stdio: 'inherit' });
+    const knex = getKnex();
+    await knex.migrate.rollback();
     // close knex pool
-    return destroyKnex();
+    await destroyKnex();
   });
 
   test('GET /api/templates returns templates', async () => {
+    // require the app after migrations/seeds so knex picks up correct env vars
+    // (avoid importing app at module load time)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const createApp = require('../../src/app').default as () => any;
     const app = createApp();
     const res = await request(app).get('/api/templates').expect(200);
     expect(res.body).toHaveProperty('data');
