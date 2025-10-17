@@ -28,7 +28,7 @@ npm run dev
 
 **Already familiar?** Check the **[Developer Guide](DEVELOPER_GUIDE.md)** for architecture patterns and best practices.
 
-**Frontend?** See **[web/README.md](web/README.md)** for React/Next.js documentation.
+**Want offline support?** See **[Task 14 - Offline & Caching](TASK_14_OFFLINE_CACHING.md)** for PWA features.
 
 ## Features
 
@@ -47,11 +47,12 @@ npm run dev
 - **Input Validation**: Zod schema validation on all endpoints
 - **Authentication**: Bearer token support with environment-based configuration
 
-### API Standards
-- **OpenAPI 3.0 Specification**: Auto-generated, fully documented API schema
-- **TypeScript**: End-to-end type safety for client and server code
-- **Structured Errors**: Consistent error response format with validation details
-- **Health Checks**: Public health endpoint for monitoring
+### Frontend Features
+- **Modern React UI**: Responsive Next.js 14 frontend with MapLibre geospatial visualization
+- **Offline-First PWA**: Service workers for offline browsing, IndexedDB caching, auto-sync
+- **Deep Linking**: Shareable URLs for venues, pitches, and sessions
+- **Type Safety**: Full TypeScript across entire frontend stack
+- **Accessible Design**: Tailwind CSS responsive components
 
 ## Technology Stack
 
