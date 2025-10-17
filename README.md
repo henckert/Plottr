@@ -2,6 +2,12 @@
 
 A secure, scalable sports field booking API built with Express.js, TypeScript, and PostgreSQL. Provides comprehensive CRUD operations, geospatial validation, cursor-based pagination, and enterprise-grade security features.
 
+## 🚀 Quick Start
+
+**First time?** Start with the **[Local Setup Guide](LOCAL_SETUP.md)** for step-by-step instructions (5 minutes).
+
+**Already familiar?** Check the **[Developer Guide](DEVELOPER_GUIDE.md)** for architecture patterns and best practices.
+
 ## Features
 
 ### Core Functionality
