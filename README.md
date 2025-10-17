@@ -1,12 +1,34 @@
-# Plottr Backend
+# Plottr: Sports Field Booking Platform
 
-A secure, scalable sports field booking API built with Express.js, TypeScript, and PostgreSQL. Provides comprehensive CRUD operations, geospatial validation, cursor-based pagination, and enterprise-grade security features.
+A complete, full-stack sports field booking system with a secure REST API backend and modern React frontend. Built with Express.js, PostgreSQL, PostGIS, Next.js, and TypeScript across the entire stack.
+
+**[Frontend Documentation →](web/README.md)** | **[Backend Docs →](LOCAL_SETUP.md)**
 
 ## 🚀 Quick Start
 
-**First time?** Start with the **[Local Setup Guide](LOCAL_SETUP.md)** for step-by-step instructions (5 minutes).
+### Backend Setup (5 min)
+```bash
+npm install
+docker-compose up -d
+npm run db:migrate
+npm run dev
+# Backend running on http://localhost:3001
+npm test  # All 158 tests ✅
+```
+
+### Frontend Setup (2 min)
+```bash
+cd web
+npm install
+npm run dev
+# Frontend running on http://localhost:3000
+```
+
+**First time?** Start with the **[Local Setup Guide](LOCAL_SETUP.md)** for step-by-step instructions.
 
 **Already familiar?** Check the **[Developer Guide](DEVELOPER_GUIDE.md)** for architecture patterns and best practices.
+
+**Frontend?** See **[web/README.md](web/README.md)** for React/Next.js documentation.
 
 ## Features
 
