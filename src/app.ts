@@ -4,6 +4,8 @@ import rateLimit from 'express-rate-limit';
 import { AppError } from './errors';
 import { errorHandler } from './errors/middleware';
 import { authMiddleware } from './middleware/auth';
+import { requestLoggingMiddleware, errorLoggingMiddleware } from './middleware/logging';
+import { healthCheck, healthCheckDetailed, readinessProbe, livenessProbe } from './controllers/health.controller';
 import apiRoutes from './routes';
 
 // Rate limiters
@@ -25,6 +27,9 @@ const publicLimiter = rateLimit({
 
 export default function createApp() {
   const app = express();
+
+  // Request logging middleware (must be first to capture all requests)
+  app.use(requestLoggingMiddleware as any);
 
   // Helmet security headers (must be before routes)
   app.use(
@@ -51,8 +56,11 @@ export default function createApp() {
 
   app.use(express.json());
 
-  // Health (no auth required, public rate limit)
-  app.get('/health', publicLimiter, (_req, res) => res.json({ ok: true }));
+  // Health check endpoints (no auth required)
+  app.get('/health', publicLimiter, healthCheck as any);
+  app.get('/healthz', publicLimiter, healthCheckDetailed as any);
+  app.get('/ready', publicLimiter, readinessProbe as any);
+  app.get('/live', publicLimiter, livenessProbe as any);
 
   // Auth middleware (applies to all /api routes)
   app.use('/api', authMiddleware);
@@ -63,6 +71,9 @@ export default function createApp() {
   // API routes
   // mount the top-level router which includes /templates, /venues, /pitches, /sessions, /geocode
   app.use('/api', apiRoutes);
+
+  // Error logging middleware (before error handler)
+  app.use(errorLoggingMiddleware as any);
 
   // Error handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
