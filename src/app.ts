@@ -63,7 +63,10 @@ export default function createApp() {
   app.get('/live', publicLimiter, livenessProbe as any);
 
   // Auth middleware (applies to all /api routes)
-  app.use('/api', authMiddleware);
+  // Wrap async middleware to catch promise rejections
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(authMiddleware(req as any, res, next)).catch(next);
+  });
 
   // Apply stricter rate limiting to authenticated API endpoints
   app.use('/api', authLimiter);

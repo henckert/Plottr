@@ -8,6 +8,25 @@
 
 ---
 
+## 🚀 CURRENT PROGRESS (October 19, 2025)
+
+**Sprint 1: Foundation - IN PROGRESS**
+- ✅ FEAT-001: Clerk Integration & JWT Setup - **5/7 subtasks complete (71%)**
+  - Frontend: Clerk SDK installed, App Router migration done, ClerkProvider setup ✅
+  - Backend: JWT middleware with Clerk verification working, /api/auth/me endpoint live ✅
+  - Database: Migration created, pending user service implementation 🔄
+  - Testing: Pending ⏳
+- ⏳ FEAT-002 through FEAT-018: Pending (waiting for FEAT-001 completion)
+
+**Key Milestones Achieved:**
+- Clerk test environment configured with API keys
+- Frontend migrated from Pages Router to App Router (required for Clerk integration)
+- Backend JWT validation middleware using @clerk/backend
+- Auth endpoint operational and returning user tier
+- Database migration prepared with tier system columns
+
+---
+
 ## 📋 Task Organization
 
 Tasks are grouped by sprint and feature area. Each task includes:
@@ -28,13 +47,22 @@ Tasks are grouped by sprint and feature area. Each task includes:
 - **Effort:** M
 - **Owner:** BE
 - **Dependencies:** None (can work in parallel)
+- **Status:** ✅ IN PROGRESS (Subtasks 1-5 Complete, 6-7 Remaining)
 - **Acceptance Criteria:**
-  - [ ] Clerk dashboard configured (test app created)
-  - [ ] Backend `/api/auth/signup`, `/api/auth/me` endpoints implemented
-  - [ ] JWT tokens extracted from Clerk SDK and validated on all protected routes
+  - [x] Clerk dashboard configured (test app created)
+  - [x] Backend `/api/auth/me` endpoint implemented (JWT validation)
+  - [x] JWT tokens extracted from Clerk SDK and validated on all protected routes
   - [ ] User record created in PostgreSQL `users` table on Clerk signup
   - [ ] Tier column (`free`, `paid_individual`, `club_admin`, `admin`) defaults to `free`
   - [ ] Tests: 5 unit tests for auth middleware
+- **Subtasks Completed:**
+  - [x] T-001.1: Install Clerk SDK (Frontend) - `@clerk/nextjs@6.33.7` installed
+  - [x] T-001.2: Create middleware.ts with clerkMiddleware() - `web/middleware.ts` created
+  - [x] T-001.3: Migrate to App Router + Setup ClerkProvider - Pages Router → App Router migration complete
+  - [x] T-001.4: Install Clerk Backend + JWT Middleware - `@clerk/backend` installed, JWT validation in `src/middleware/auth.ts`
+  - [x] T-001.5: Create /api/auth/me Endpoint - GET `/api/auth/me` endpoint working
+  - [ ] T-001.6: Database Schema + User Creation - In progress (migration created, need user service)
+  - [ ] T-001.7: Add Unit Tests - Pending
 
 #### FEAT-002: Tier-Based Route Protection
 - **Effort:** M

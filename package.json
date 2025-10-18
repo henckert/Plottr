@@ -30,6 +30,7 @@
   },
   "prepare": "husky install",
   "dependencies": {
+    "@clerk/backend": "^2.18.3",
     "@mapbox/mapbox-sdk": "^0.13.0",
     "aws-sdk": "^2.0.0",
     "dotenv": "^10.0.0",

@@ -7,6 +7,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
   },
+  // Ensure experimental.appDir is not needed (App Router is default in Next.js 13+)
 };
 
 export default nextConfig;
