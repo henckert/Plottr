@@ -454,6 +454,656 @@ paths:
                       code:
                         type: string
                         example: CONFLICT
+
+  /sites:
+    get:
+      summary: List sites with cursor pagination
+      description: Get paginated list of sites for a specific club
+      tags:
+        - Sites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Filter sites by club ID
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Base64-encoded cursor for pagination
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return (max 100)
+      responses:
+        '200':
+          description: Paginated list of sites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Site'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Cursor for next page (null if no more pages)
+                  has_more:
+                    type: boolean
+                    description: True if more pages available
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a site
+      description: Create a new site with GeoJSON Point location
+      tags:
+        - Sites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteCreate'
+      responses:
+        '201':
+          description: Site created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /sites/{id}:
+    get:
+      summary: Get a single site
+      description: Retrieve site by ID
+      tags:
+        - Sites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      responses:
+        '200':
+          description: Site details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a site
+      description: Update site with optimistic concurrency control via If-Match header
+      tags:
+        - Sites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteUpdate'
+      responses:
+        '200':
+          description: Site updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+    delete:
+      summary: Delete a site (soft delete)
+      description: Soft delete site with optimistic concurrency control
+      tags:
+        - Sites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      responses:
+        '204':
+          description: Site soft deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+
+  /layouts:
+    get:
+      summary: List layouts for a site
+      description: Get paginated list of layouts for a specific site
+      tags:
+        - Layouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: site_id
+          required: true
+          schema:
+            type: integer
+          description: Filter layouts by site ID
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Base64-encoded cursor for pagination
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return (max 100)
+      responses:
+        '200':
+          description: Paginated list of layouts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Layout'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                  has_more:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    post:
+      summary: Create a layout
+      description: Create a new layout for a site
+      tags:
+        - Layouts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutCreate'
+      responses:
+        '201':
+          description: Layout created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Layout'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /layouts/{id}:
+    get:
+      summary: Get a single layout
+      description: Retrieve layout by ID
+      tags:
+        - Layouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      responses:
+        '200':
+          description: Layout details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Layout'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a layout
+      description: Update layout with optimistic concurrency control
+      tags:
+        - Layouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutUpdate'
+      responses:
+        '200':
+          description: Layout updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Layout'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+    delete:
+      summary: Delete a layout (hard delete)
+      description: Hard delete layout with CASCADE to zones/assets/templates
+      tags:
+        - Layouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+        - in: query
+          name: club_id
+          required: true
+          schema:
+            type: integer
+          description: Club ID for ownership validation
+      responses:
+        '204':
+          description: Layout deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+
+  /zones:
+    get:
+      summary: List zones for a layout
+      description: Get paginated list of zones with optional filtering by layout_id and zone_type
+      tags:
+        - Zones
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: layout_id
+          required: false
+          schema:
+            type: integer
+          description: Filter zones by layout ID
+        - in: query
+          name: zone_type
+          required: false
+          schema:
+            type: string
+            enum:
+              - pitch
+              - goal_area
+              - penalty_area
+              - training_zone
+              - competition
+              - parking
+              - seating
+              - entrance
+              - exit
+              - restroom
+              - concession
+              - vendor
+              - medical
+              - equipment
+              - other
+          description: Filter zones by type
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Base64-encoded cursor for pagination
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return (max 100)
+      responses:
+        '200':
+          description: Paginated list of zones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Zone'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                  has_more:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a zone
+      description: Create a new zone within a layout
+      tags:
+        - Zones
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneCreate'
+      responses:
+        '201':
+          description: Zone created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Zone'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Layout not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Layout not found
+                      code:
+                        type: string
+                        example: LAYOUT_NOT_FOUND
+
+  /zones/{id}:
+    get:
+      summary: Get a single zone
+      description: Retrieve zone by ID
+      tags:
+        - Zones
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Zone details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Zone'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a zone
+      description: Update zone with optimistic concurrency control
+      tags:
+        - Zones
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneUpdate'
+      responses:
+        '200':
+          description: Zone updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Zone'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+    delete:
+      summary: Delete a zone
+      description: Delete zone with optimistic concurrency control
+      tags:
+        - Zones
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Zone deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -510,6 +1160,40 @@ components:
                     type: string
                     example: NOT_FOUND
 
+    ForbiddenError:
+      description: Forbidden - user does not have permission to access this resource
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Access denied - ownership validation failed
+                  code:
+                    type: string
+                    example: FORBIDDEN
+
+    VersionConflictError:
+      description: Version conflict - stale version_token (optimistic locking)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Resource version mismatch - stale version_token
+                  code:
+                    type: string
+                    example: VERSION_CONFLICT
+
   schemas:
     Template:
       type: object
@@ -534,6 +1218,418 @@ components:
           type: string
           format: date-time
           example: '2025-10-16T10:00:00.000Z'
+
+    Site:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        club_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Riverside Sports Complex
+          maxLength: 200
+        location:
+          type: object
+          description: GeoJSON Point (WGS84, SRID 4326)
+          properties:
+            type:
+              type: string
+              enum: [Point]
+            coordinates:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 2
+          example: { type: Point, coordinates: [-6.2603, 53.3498] }
+        boundary:
+          type: object
+          nullable: true
+          description: GeoJSON Polygon (WGS84, SRID 4326)
+          properties:
+            type:
+              type: string
+              enum: [Polygon]
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: number
+          example: { type: Polygon, coordinates: [[[-6.2610, 53.3490], [-6.2596, 53.3490], [-6.2596, 53.3506], [-6.2610, 53.3506], [-6.2610, 53.3490]]] }
+        address:
+          type: string
+          nullable: true
+          example: '123 River Road, Dublin 4, Ireland'
+          maxLength: 500
+        version_token:
+          type: string
+          format: uuid
+          example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft delete timestamp
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+      required:
+        - id
+        - club_id
+        - name
+        - location
+        - version_token
+        - created_at
+        - updated_at
+
+    SiteCreate:
+      type: object
+      properties:
+        club_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: New Sports Complex
+          maxLength: 200
+        location:
+          type: object
+          description: GeoJSON Point (WGS84, SRID 4326)
+          properties:
+            type:
+              type: string
+              enum: [Point]
+            coordinates:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 2
+          example: { type: Point, coordinates: [-6.2603, 53.3498] }
+        boundary:
+          type: object
+          nullable: true
+          description: GeoJSON Polygon (WGS84, SRID 4326)
+        address:
+          type: string
+          nullable: true
+          maxLength: 500
+      required:
+        - club_id
+        - name
+        - location
+
+    SiteUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        location:
+          type: object
+          description: GeoJSON Point (WGS84, SRID 4326)
+        boundary:
+          type: object
+          nullable: true
+          description: GeoJSON Polygon (WGS84, SRID 4326)
+        address:
+          type: string
+          nullable: true
+          maxLength: 500
+      description: All fields optional (partial update). Requires at least one field.
+
+    Layout:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        site_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Winter Training Layout
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          example: Main training configuration for winter season
+          maxLength: 2000
+        is_published:
+          type: boolean
+          example: false
+          description: Whether layout is publicly visible
+        version_token:
+          type: string
+          format: uuid
+          example: 'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+      required:
+        - id
+        - site_id
+        - name
+        - is_published
+        - version_token
+        - created_at
+        - updated_at
+
+    LayoutCreate:
+      type: object
+      properties:
+        site_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: New Layout
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        is_published:
+          type: boolean
+          example: false
+      required:
+        - site_id
+        - name
+
+    LayoutUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        is_published:
+          type: boolean
+      description: All fields optional (partial update). Requires at least one field.
+
+    Zone:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        layout_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Main Pitch
+          maxLength: 100
+        zone_type:
+          type: string
+          enum:
+            - pitch
+            - goal_area
+            - penalty_area
+            - training_zone
+            - competition
+            - parking
+            - seating
+            - entrance
+            - exit
+            - restroom
+            - concession
+            - vendor
+            - medical
+            - equipment
+            - other
+          example: pitch
+        surface:
+          type: string
+          enum:
+            - grass
+            - turf
+            - clay
+            - concrete
+            - asphalt
+            - gravel
+            - other
+          nullable: true
+          example: grass
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: '#22c55e'
+          description: Hex color code for zone visualization
+        boundary:
+          type: object
+          description: GeoJSON Polygon (WGS84) defining zone boundaries
+          example:
+            type: Polygon
+            coordinates:
+              - - [-122.4194, 37.7749]
+                - [-122.4184, 37.7749]
+                - [-122.4184, 37.7739]
+                - [-122.4194, 37.7739]
+                - [-122.4194, 37.7749]
+        area_sqm:
+          type: number
+          nullable: true
+          example: 7200.5
+          description: Calculated area in square meters
+        perimeter_m:
+          type: number
+          nullable: true
+          example: 360.2
+          description: Calculated perimeter in meters
+        version_token:
+          type: string
+          format: uuid
+          example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+      required:
+        - id
+        - layout_id
+        - name
+        - zone_type
+        - boundary
+        - version_token
+        - created_at
+        - updated_at
+
+    ZoneCreate:
+      type: object
+      properties:
+        layout_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: New Pitch
+          maxLength: 100
+        zone_type:
+          type: string
+          enum:
+            - pitch
+            - goal_area
+            - penalty_area
+            - training_zone
+            - competition
+            - parking
+            - seating
+            - entrance
+            - exit
+            - restroom
+            - concession
+            - vendor
+            - medical
+            - equipment
+            - other
+          example: pitch
+        surface:
+          type: string
+          enum:
+            - grass
+            - turf
+            - clay
+            - concrete
+            - asphalt
+            - gravel
+            - other
+          nullable: true
+          example: grass
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: '#22c55e'
+          description: Hex color code (e.g., #22c55e)
+        boundary:
+          type: object
+          description: 'GeoJSON Polygon (WGS84). Must be valid: closed ring, 4+ points, WGS84 bounds'
+          example:
+            type: Polygon
+            coordinates:
+              - - [-122.4194, 37.7749]
+                - [-122.4184, 37.7749]
+                - [-122.4184, 37.7739]
+                - [-122.4194, 37.7739]
+                - [-122.4194, 37.7749]
+      required:
+        - layout_id
+        - name
+        - zone_type
+        - boundary
+
+    ZoneUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        zone_type:
+          type: string
+          enum:
+            - pitch
+            - goal_area
+            - penalty_area
+            - training_zone
+            - competition
+            - parking
+            - seating
+            - entrance
+            - exit
+            - restroom
+            - concession
+            - vendor
+            - medical
+            - equipment
+            - other
+        surface:
+          type: string
+          enum:
+            - grass
+            - turf
+            - clay
+            - concrete
+            - asphalt
+            - gravel
+            - other
+          nullable: true
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          description: Hex color code
+        boundary:
+          type: object
+          description: GeoJSON Polygon (WGS84)
+      description: All fields optional (partial update). Requires at least one field.
+
     Venue:
       type: object
       properties:
