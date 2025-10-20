@@ -1,30 +1,32 @@
 ﻿import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import multer from 'multer';
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
 import { AppError } from './errors';
 import { errorHandler } from './errors/middleware';
 import { authMiddleware } from './middleware/auth';
 import { requestLoggingMiddleware, errorLoggingMiddleware } from './middleware/logging';
+import { makeRateLimiter } from './middleware/rateLimitBypass';
 import { healthCheck, healthCheckDetailed, readinessProbe, livenessProbe } from './controllers/health.controller';
 import apiRoutes from './routes';
 
-// Rate limiters
-const authLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 15, // 15 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
-});
+// Rate limiters with E2E bypass
+const authLimiter = makeRateLimiter(60 * 1000, 15); // 15 req/min
+const publicLimiter = makeRateLimiter(60 * 1000, 100); // 100 req/min
 
-const publicLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
-});
+// Load OpenAPI spec
+let swaggerDocument: any = null;
+try {
+  const openapiPath = path.resolve(__dirname, '../openapi/plottr.yaml');
+  const fileContents = fs.readFileSync(openapiPath, 'utf8');
+  swaggerDocument = yaml.load(fileContents);
+} catch (err) {
+  // eslint-disable-next-line no-console
+  console.warn('Failed to load OpenAPI spec:', err);
+}
 
 export default function createApp() {
   const app = express();
@@ -38,9 +40,10 @@ export default function createApp() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
+          styleSrc: ["'self'", "'unsafe-inline'"], // Swagger UI requires inline styles
+          scriptSrc: ["'self'", "'unsafe-inline'"], // Swagger UI requires inline scripts
+          imgSrc: ["'self'", 'data:', 'https:', 'validator.swagger.io'],
+          fontSrc: ["'self'", 'data:'],
         },
       },
       hsts: {
@@ -93,6 +96,39 @@ export default function createApp() {
   app.get('/healthz', publicLimiter, healthCheckDetailed as any);
   app.get('/ready', publicLimiter, readinessProbe as any);
   app.get('/live', publicLimiter, livenessProbe as any);
+
+  // API Documentation (Swagger UI)
+  if (swaggerDocument) {
+    // Customize Swagger UI options
+    const swaggerUiOptions = {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Plottr API Documentation',
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        tryItOutEnabled: true,
+      },
+    };
+
+    app.use(
+      '/api/docs',
+      publicLimiter,
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerDocument, swaggerUiOptions)
+    );
+
+    // Also serve raw OpenAPI spec at /api/openapi.json
+    app.get('/api/openapi.json', publicLimiter, (req, res) => {
+      res.json(swaggerDocument);
+    });
+
+    // eslint-disable-next-line no-console
+    console.log('API documentation available at /api/docs');
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn('API documentation unavailable - OpenAPI spec failed to load');
+  }
 
   // Auth middleware (applies to all /api routes)
   // Wrap async middleware to catch promise rejections

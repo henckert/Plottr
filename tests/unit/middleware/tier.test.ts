@@ -1,0 +1,300 @@
+import { Request, Response, NextFunction } from 'express';
+import { tierMiddleware, checkLayoutLimit, requireTier, addTierHeaders } from '../../../src/middleware/tier';
+import { AuthenticatedRequest } from '../../../src/middleware/auth';
+import { AppError } from '../../../src/errors';
+import { TIER_ERROR_MESSAGES, TIER_STATUS_CODES } from '../../../src/lib/tiers';
+
+describe('Tier Middleware - Usage Limits & Authorization', () => {
+  let mockReq: Partial<AuthenticatedRequest>;
+  let mockRes: Partial<Response>;
+  let mockNext: jest.Mock;
+
+  beforeEach(() => {
+    mockReq = {
+      user: {
+        clerkId: 'user_123',
+        email: 'user@example.com',
+        tier: 'free',
+        token: 'jwt.token',
+      },
+      method: 'POST',
+      headers: {},
+    } as any;
+
+    mockRes = {
+      setHeader: jest.fn().mockReturnThis(),
+    };
+
+    mockNext = jest.fn();
+  });
+
+  describe('tierMiddleware', () => {
+    it('should allow admin tier to bypass all checks', async () => {
+      mockReq.user!.tier = 'admin';
+
+      const middleware = await tierMiddleware('layouts');
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should attach tier limit info for POST requests', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'POST';
+
+      const middleware = await tierMiddleware('layouts');
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect((mockReq as any).tierLimit).toBe(3); // Free tier limit
+      expect((mockReq as any).tierResource).toBe('layouts');
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should attach paid tier limit info', async () => {
+      mockReq.user!.tier = 'paid_individual';
+      mockReq.method = 'POST';
+
+      const middleware = await tierMiddleware('layouts');
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect((mockReq as any).tierLimit).toBe(50); // Paid tier limit
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should block free tier from AI features', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'POST';
+
+      const middleware = await tierMiddleware('ai_features');
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      const error = mockNext.mock.calls[0][0];
+      expect(error.status).toBe(403);
+      expect(error.code).toBe('TIER_UPGRADE_REQUIRED');
+    });
+
+    it('should allow paid tier to access AI features', async () => {
+      mockReq.user!.tier = 'paid_individual';
+      mockReq.method = 'POST';
+
+      const middleware = await tierMiddleware('ai_features');
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('checkLayoutLimit middleware', () => {
+    it('should allow request when user has not hit layout limit', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(2), // User has 2 layouts
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+      expect((mockReq as any).tierQuotaRemaining).toBe(1); // 3 - 2 = 1
+    });
+
+    it('should block request when free user hits 3 layout limit', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(3), // User has 3 layouts (at limit)
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      const error = mockNext.mock.calls[0][0];
+      expect(error.status).toBe(402); // Payment Required
+      expect(error.code).toBe('LAYOUT_LIMIT_REACHED');
+      expect(error.message).toContain('reached the maximum number of layouts');
+    });
+
+    it('should allow paid tier to create more layouts', async () => {
+      mockReq.user!.tier = 'paid_individual';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(49), // User has 49 layouts (at paid limit)
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+      expect((mockReq as any).tierQuotaRemaining).toBe(1); // 50 - 49 = 1
+    });
+
+    it('should skip limit check for admin tier', async () => {
+      mockReq.user!.tier = 'admin';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(1000),
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockLayoutsRepo.countByUser).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should skip limit check for non-POST requests', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'GET';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn(),
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockLayoutsRepo.countByUser).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('requireTier middleware', () => {
+    it('should allow user with sufficient tier', () => {
+      mockReq.user!.tier = 'paid_individual';
+
+      const middleware = requireTier('free');
+      middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should block free tier from paid features', () => {
+      mockReq.user!.tier = 'free';
+
+      const middleware = requireTier('paid_individual');
+      middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      const error = mockNext.mock.calls[0][0];
+      expect(error.status).toBe(403);
+      expect(error.code).toBe('TIER_UPGRADE_REQUIRED');
+    });
+
+    it('should allow admin access to any tier features', () => {
+      mockReq.user!.tier = 'admin';
+
+      const middleware = requireTier('club_admin');
+      middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should reject paid_individual for club_admin features', () => {
+      mockReq.user!.tier = 'paid_individual';
+
+      const middleware = requireTier('club_admin');
+      middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      const error = mockNext.mock.calls[0][0];
+      expect(error.status).toBe(403);
+    });
+  });
+
+  describe('addTierHeaders middleware', () => {
+    it('should add tier headers to response', () => {
+      mockReq.user!.tier = 'free';
+
+      addTierHeaders(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      // New header names from refactored utility
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Tier', 'free');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Tier-Level', '0');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Layout-Limit', '3');
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should add quota remaining header when available', () => {
+      mockReq.user!.tier = 'free';
+      (mockReq as any).tierQuotaRemaining = 2;
+
+      addTierHeaders(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      // Headers are always strings
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Quota-Remaining', '2');
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('should handle different tiers correctly', () => {
+      mockReq.user!.tier = 'paid_individual';
+
+      addTierHeaders(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Tier', 'paid_individual');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Tier-Level', '1');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('X-Layout-Limit', '50');
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('Tier System Integration', () => {
+    it('should enforce free tier 3-layout limit', async () => {
+      mockReq.user!.tier = 'free';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(3),
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+      const error = mockNext.mock.calls[0][0];
+      expect(error.status).toBe(TIER_STATUS_CODES.LAYOUT_LIMIT_REACHED);
+      expect(error.message).toContain(TIER_ERROR_MESSAGES.LAYOUT_LIMIT_REACHED);
+    });
+
+    it('should allow paid tier 50 layouts', async () => {
+      mockReq.user!.tier = 'paid_individual';
+      mockReq.method = 'POST';
+
+      const mockLayoutsRepo = {
+        countByUser: jest.fn().mockResolvedValue(49),
+      };
+
+      const mockGetLayoutsRepo = jest.fn().mockReturnValue(mockLayoutsRepo);
+      const mockGetUsersRepo = jest.fn();
+
+      const middleware = checkLayoutLimit(mockGetUsersRepo, mockGetLayoutsRepo);
+      await middleware(mockReq as AuthenticatedRequest, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+  });
+});

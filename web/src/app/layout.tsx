@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+// Temporarily commenting out Clerk for development testing
+// import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import "@/globals.css";
 
 export const metadata: Metadata = {
@@ -13,15 +14,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    // <ClerkProvider>
       <html lang="en">
         <body>
           <header className="border-b border-gray-200 bg-white shadow-sm">
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Plottr</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Plottr (Dev Mode)</h1>
               </div>
               <nav className="flex items-center gap-4">
+                <span className="text-sm text-gray-500">Authentication temporarily disabled for development</span>
+                {/* 
                 <SignedOut>
                   <SignInButton mode="modal">
                     <button className="px-4 py-2 text-gray-700 hover:text-gray-900">
@@ -37,6 +40,7 @@ export default function RootLayout({
                 <SignedIn>
                   <UserButton afterSignOutUrl="/" />
                 </SignedIn>
+                */}
               </nav>
             </div>
           </header>
@@ -45,6 +49,6 @@ export default function RootLayout({
           </main>
         </body>
       </html>
-    </ClerkProvider>
+    // </ClerkProvider>
   );
 }

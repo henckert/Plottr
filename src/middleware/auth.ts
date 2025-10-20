@@ -7,9 +7,11 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     clerkId: string;
     email?: string;
-    tier?: 'free' | 'paid_individual' | 'club_admin' | 'admin';
+    tier?: 'free' | 'paid_individual' | 'club_admin' | 'admin' | string;
     token: string;
   };
+  file?: Express.Multer.File;
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
 }
 
 const config = getConfig();

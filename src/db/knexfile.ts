@@ -3,7 +3,7 @@ import path from 'path';
 import type { Knex } from 'knex';
 
 const connectionTest = process.env.DATABASE_URL_TEST ?? 'postgres://postgres:postgres@localhost:5432/plottr_test';
-const connectionDev  = process.env.DATABASE_URL      ?? 'postgres://postgres:postgres@localhost:5432/plottr';
+const connectionDev  = process.env.DATABASE_URL      ?? 'postgres://postgres:postgres@localhost:5432/plottr_dev';
 
 const common: Partial<Knex.Config> = {
   client: 'pg',
