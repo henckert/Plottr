@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 20, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) ✅  
-**Project Completion:** 31/88 subtasks (35%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (1/16-22) ✅  
+**Project Completion:** 32/88 subtasks (36%)
 
 ---
 
@@ -305,18 +305,42 @@
 
 **Completed:**
 - [x] ✅ **4.1: Layout Editor Setup & Dependencies**
-  - **Status:** Complete - Planning document created
-  - **File:** TASK_4.1_LAYOUT_EDITOR_SETUP.md (600+ lines, 12 sections)
-  - **Deliverables:**
-    - Dependencies identified: maplibre-gl ^4.1.0, @turf/turf ^7.0.0, @tanstack/react-query ^5.28.0
-    - API client generation plan: openapi-typescript from plottr.yaml → api.d.ts
-    - Component structure: 10 components (LayoutEditor, MapCanvas, DrawingToolbar, ZonePropertiesPanel, ZoneList, SaveIndicator, ValidationToast, ColorPicker, EnumSelect, ConfirmDialog)
-    - Routing: /editor (selector) and /editor/[layoutId] (editor)
-    - API integration: 4 phases (viewer → creation → editing → deletion)
-    - Performance targets: <2s load (250 zones), <5s load (400 zones), 60fps render
-    - Testing strategy: Playwright visual regression + Jest unit tests
-    - Version token handling: Optimistic locking with conflict resolution dialog
-  - **Next Steps:** Install dependencies, generate API client, create component stubs
+  - **Status:** Complete - Infrastructure ready for development
+  - **Files Created:** 
+    - TASK_4.1_LAYOUT_EDITOR_SETUP.md (600+ lines planning)
+    - TASK_4.1_COMPLETE.md (250+ lines completion summary)
+    - web/src/types/api.d.ts (1,517 lines generated from OpenAPI)
+    - web/src/lib/api-client.ts (50 lines type-safe fetch wrapper)
+    - web/src/hooks/useLayouts.ts (154 lines React Query hooks)
+    - web/src/hooks/useZones.ts (149 lines React Query hooks)
+    - web/src/providers/ReactQueryProvider.tsx (43 lines provider)
+  - **Dependencies Installed:** 13 packages
+    - @tanstack/react-query@^5.28.0 (state management)
+    - @turf/turf@^7.0.0 (GeoJSON validation)
+    - react-colorful@^5.6.1 (color picker)
+    - react-hot-toast@^2.4.1 (notifications)
+    - lucide-react@^0.363.0 (icons)
+    - @headlessui/react@^1.7.18 (accessible UI)
+    - @playwright/test@^1.42.1 (E2E testing)
+    - pixelmatch@^5.3.0 (image comparison)
+    - @tanstack/react-virtual@^3.2.0 (virtual scrolling)
+    - openapi-typescript@^6.7.5 (type generation)
+    - openapi-fetch@^0.9.7 (type-safe client)
+    - @tanstack/react-query-devtools@^5.28.0 (dev tools)
+  - **API Client:** TypeScript types generated, React Query hooks with optimistic updates
+  - **Architecture:** 10 component structure defined, 4-phase API integration plan
+  - **Performance Targets:** <2s load (250 zones), 60fps render, <500ms autosave
+  - **Testing:** Playwright + Jest strategy documented
+  - **Git Commit:** `feat(frontend): TASK 4.1 - Layout Editor Setup & Dependencies`
+  - **Next Steps:** Create MapCanvas component with MapLibre integration
+
+**In Progress:**
+- [ ] 🚧 **4.2: Map Component Integration**
+  - Create MapCanvas.tsx with MapLibre GL initialization
+  - Add zoom/pan controls and viewport management
+  - Implement base layer toggle (streets/satellite)
+  - Render zones as GeoJSON layers with color styling
+  - Test performance with 50-250 zones
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
