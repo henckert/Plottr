@@ -1,6 +1,7 @@
 ﻿import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import { AppError } from './errors';
 import { errorHandler } from './errors/middleware';
 import { authMiddleware } from './middleware/auth';
@@ -55,6 +56,37 @@ export default function createApp() {
   );
 
   app.use(express.json());
+
+  // Configure multer for file uploads (5MB max) - for /api/geometries/import endpoint
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+    fileFilter: (req, file, cb) => {
+      // Only allow GeoJSON and KML files
+      const allowedMimes = ['application/json', 'application/xml', 'text/xml', 'text/plain'];
+      const allowedExtensions = ['.geojson', '.json', '.kml', '.xml'];
+      
+      const fileName = file.originalname.toLowerCase();
+      const isAllowedExt = allowedExtensions.some(ext => fileName.endsWith(ext));
+      const isAllowedMime = allowedMimes.includes(file.mimetype);
+      
+      if (isAllowedExt || isAllowedMime) {
+        cb(null, true);
+      } else {
+        // Return AppError with 400 status instead of generic Error
+        const error = new AppError(
+          'Only GeoJSON (.geojson, .json) and KML (.kml, .xml) files are allowed',
+          400,
+          'INVALID_FILETYPE'
+        );
+        cb(error as any);
+      }
+    },
+  });
+
+  app.post('/api/geometries/import', upload.single('file'));
 
   // Health check endpoints (no auth required)
   app.get('/health', publicLimiter, healthCheck as any);
