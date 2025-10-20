@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 // Temporarily commenting out Clerk for development testing
 // import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ReactQueryProvider } from "@/providers/ReactQueryProvider";
 import "@/globals.css";
 
 export const metadata: Metadata = {
@@ -44,9 +45,11 @@ export default function RootLayout({
               </nav>
             </div>
           </header>
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <ReactQueryProvider>
+            <main className="min-h-screen">
+              {children}
+            </main>
+          </ReactQueryProvider>
         </body>
       </html>
     // </ClerkProvider>
