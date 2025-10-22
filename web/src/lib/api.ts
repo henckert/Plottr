@@ -54,13 +54,42 @@ export interface VenueUpdate {
 }
 
 export interface Pitch {
-  id: string;
-  venue_id: string;
+  id: number;
+  venue_id: number;
   name: string;
-  surface: string;
-  boundary: GeoJSON.Polygon;
+  code?: string | null;
+  sport?: string | null;
+  level?: string | null;
+  geometry?: any; // GeoJSON Polygon
+  rotation_deg?: number | null;
+  template_id?: string | null;
+  status?: 'draft' | 'published';
+  version_token?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PitchCreate {
+  venue_id: number;
+  name: string;
+  code?: string;
+  sport?: string;
+  level?: string;
+  geometry?: any;
+  rotation_deg?: number;
+  template_id?: string;
+  status?: 'draft' | 'published';
+}
+
+export interface PitchUpdate {
+  name?: string;
+  code?: string;
+  sport?: string;
+  level?: string;
+  geometry?: any;
+  rotation_deg?: number;
+  template_id?: string;
+  status?: 'draft' | 'published';
 }
 
 export interface Session {
@@ -132,20 +161,34 @@ export const venueApi = {
 };
 
 export const pitchApi = {
-  list: async (limit = 50, cursor?: string) => {
+  list: async (venueId?: number, limit = 50, cursor?: string) => {
     const response = await apiClient.get<PaginatedResponse<Pitch>>('/pitches', {
-      params: { limit, cursor },
+      params: { venue_id: venueId, limit, cursor },
     });
     return response.data;
   },
 
-  getById: async (id: string) => {
-    const response = await apiClient.get<Pitch>(`/pitches/${id}`);
-    return response.data;
+  getById: async (id: number | string) => {
+    const response = await apiClient.get<{ data: Pitch }>(`/pitches/${id}`);
+    return response.data.data;
   },
 
-  create: async (data: Omit<Pitch, 'id' | 'created_at' | 'updated_at'>) => {
-    const response = await apiClient.post<Pitch>('/pitches', data);
+  create: async (data: PitchCreate) => {
+    const response = await apiClient.post<{ data: Pitch }>('/pitches', data);
+    return response.data.data;
+  },
+
+  update: async (id: number | string, data: PitchUpdate, versionToken: string) => {
+    const response = await apiClient.put<{ data: Pitch }>(`/pitches/${id}`, data, {
+      headers: { 'If-Match': versionToken },
+    });
+    return response.data.data;
+  },
+
+  delete: async (id: number | string, versionToken: string) => {
+    const response = await apiClient.delete(`/pitches/${id}`, {
+      headers: { 'If-Match': versionToken },
+    });
     return response.data;
   },
 };

@@ -15,8 +15,10 @@ Integrate the MapDrawControl polygon drawing system into the main Plottr applica
 
 ## 📋 Subtasks
 
-### 4.4.1 - Venue Creation Flow (2 hours)
+### 4.4.1 - Venue Creation Flow ✅ COMPLETE (2 hours)
 **Goal**: Allow users to draw venue boundaries when creating a new venue
+**Status**: ✅ COMPLETE (October 22, 2025)
+**Commit**: 83a5084, b11c444
 
 **Implementation**:
 1. Create `web/src/app/venues/new/page.tsx` - Venue creation form
