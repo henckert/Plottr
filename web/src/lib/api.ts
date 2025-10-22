@@ -93,14 +93,39 @@ export interface PitchUpdate {
 }
 
 export interface Session {
-  id: string;
-  pitch_id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  id: number;
+  team_id?: number | null;
+  venue_id: number;
+  pitch_id?: number | null;
+  segment_id?: number | null;
+  start_ts?: string | null;
+  end_ts?: string | null;
+  notes?: string | null;
+  share_token?: string | null;
+  version_token?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SessionCreate {
+  venue_id: number;
+  pitch_id?: number | null;
+  team_id?: number;
+  segment_id?: number | null;
+  start_ts?: string;
+  end_ts?: string;
+  notes?: string;
+  share_token?: string;
+}
+
+export interface SessionUpdate {
+  pitch_id?: number | null;
+  team_id?: number;
+  segment_id?: number | null;
+  start_ts?: string;
+  end_ts?: string;
+  notes?: string;
+  share_token?: string;
 }
 
 export interface GeoJSON {
@@ -194,20 +219,34 @@ export const pitchApi = {
 };
 
 export const sessionApi = {
-  list: async (limit = 50, cursor?: string) => {
+  list: async (venueId?: number, pitchId?: number, limit = 50, cursor?: string) => {
     const response = await apiClient.get<PaginatedResponse<Session>>('/sessions', {
-      params: { limit, cursor },
+      params: { venue_id: venueId, pitch_id: pitchId, limit, cursor },
     });
     return response.data;
   },
 
-  getById: async (id: string) => {
-    const response = await apiClient.get<Session>(`/sessions/${id}`);
-    return response.data;
+  getById: async (id: number | string) => {
+    const response = await apiClient.get<{ data: Session }>(`/sessions/${id}`);
+    return response.data.data;
   },
 
-  create: async (data: Omit<Session, 'id' | 'created_at' | 'updated_at'>) => {
-    const response = await apiClient.post<Session>('/sessions', data);
+  create: async (data: SessionCreate) => {
+    const response = await apiClient.post<{ data: Session }>('/sessions', data);
+    return response.data.data;
+  },
+
+  update: async (id: number | string, data: SessionUpdate, versionToken: string) => {
+    const response = await apiClient.put<{ data: Session }>(`/sessions/${id}`, data, {
+      headers: { 'If-Match': versionToken },
+    });
+    return response.data.data;
+  },
+
+  delete: async (id: number | string, versionToken: string) => {
+    const response = await apiClient.delete(`/sessions/${id}`, {
+      headers: { 'If-Match': versionToken },
+    });
     return response.data;
   },
 };
