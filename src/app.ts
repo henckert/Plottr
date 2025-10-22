@@ -1,4 +1,5 @@
 ﻿import express, { NextFunction, Request, Response } from 'express';
+import cors from 'cors';
 import helmet from 'helmet';
 import multer from 'multer';
 import swaggerUi from 'swagger-ui-express';
@@ -33,6 +34,12 @@ export default function createApp() {
 
   // Request logging middleware (must be first to capture all requests)
   app.use(requestLoggingMiddleware as any);
+
+  // CORS middleware (must be before routes)
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  }));
 
   // Helmet security headers (must be before routes)
   app.use(

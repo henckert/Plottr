@@ -28,7 +28,7 @@ export function useZones(params?: {
           layout_id: params?.layoutId,
           zone_type: params?.zoneType,
           cursor: params?.cursor,
-          limit: params?.limit || 500, // Higher limit for zones
+          limit: params?.limit || 100, // Backend max is 100
         },
       });
       return response.data;

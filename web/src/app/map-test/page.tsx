@@ -1,203 +1,186 @@
 /**
  * Map Test Page
- * Demonstrates MapCanvas component with sample zones
+ * Demonstrates MapCanvas component with real API data
  */
 
 'use client';
 
 import { useState } from 'react';
-import { MapCanvas } from '@/components/editor/MapCanvas';
-import type { components } from '@/types/api';
-
-type Zone = components['schemas']['Zone'];
-
-// Sample zones for testing (San Francisco location)
-const sampleZones = [
-  {
-    id: 1,
-    layout_id: 1,
-    name: 'Main Pitch',
-    zone_type: 'pitch',
-    surface: 'grass',
-    color: '#22c55e',
-    boundary: {
-      type: 'Polygon',
-      coordinates: [
-        [
-          [-122.4200, 37.7750],
-          [-122.4190, 37.7750],
-          [-122.4190, 37.7745],
-          [-122.4200, 37.7745],
-          [-122.4200, 37.7750], // Closing point
-        ],
-      ],
-    },
-    area_sqm: 7500,
-    perimeter_m: 350,
-    version_token: 'test-uuid-1',
-    created_at: '2025-10-20T00:00:00Z',
-    updated_at: '2025-10-20T00:00:00Z',
-  },
-  {
-    id: 2,
-    layout_id: 1,
-    name: 'Goal Area North',
-    zone_type: 'goal_area',
-    surface: 'grass',
-    color: '#3b82f6',
-    boundary: {
-      type: 'Polygon',
-      coordinates: [
-        [
-          [-122.4198, 37.7750],
-          [-122.4192, 37.7750],
-          [-122.4192, 37.7749],
-          [-122.4198, 37.7749],
-          [-122.4198, 37.7750],
-        ],
-      ],
-    },
-    area_sqm: 180,
-    perimeter_m: 54,
-    version_token: 'test-uuid-2',
-    created_at: '2025-10-20T00:00:00Z',
-    updated_at: '2025-10-20T00:00:00Z',
-  },
-  {
-    id: 3,
-    layout_id: 1,
-    name: 'Parking Lot',
-    zone_type: 'parking',
-    surface: 'asphalt',
-    color: '#6b7280',
-    boundary: {
-      type: 'Polygon',
-      coordinates: [
-        [
-          [-122.4205, 37.7748],
-          [-122.4200, 37.7748],
-          [-122.4200, 37.7743],
-          [-122.4205, 37.7743],
-          [-122.4205, 37.7748],
-        ],
-      ],
-    },
-    area_sqm: 1200,
-    perimeter_m: 140,
-    version_token: 'test-uuid-3',
-    created_at: '2025-10-20T00:00:00Z',
-    updated_at: '2025-10-20T00:00:00Z',
-  },
-];
+import { useSearchParams } from 'next/navigation';
+import { MapCanvas } from '@/components/editor/MapCanvasRobust';
+import { MapErrorBoundary } from '@/components/editor/MapErrorBoundary';
+import { useZones } from '@/hooks/useZones';
+import { getZoneTypeColor } from '@/lib/maplibre-config';
 
 export default function MapTestPage() {
+  const searchParams = useSearchParams();
+  const layoutId = searchParams.get('layoutId') ? parseInt(searchParams.get('layoutId')!) : 1;
+  
+  // Fetch zones from API (backend max limit is 100)
+  const { data: zonesData, isLoading, error } = useZones({ layoutId, limit: 100 });
+  const zones = zonesData?.data || [];
+  
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
-
-  const handleZoneClick = (zoneId: number) => {
-    setSelectedZoneId(zoneId);
-    const zone = sampleZones.find((z) => z.id === zoneId);
-    console.log('Zone clicked:', zone?.name);
-  };
-
-  const selectedZone = sampleZones.find((z) => z.id === selectedZoneId);
+  const selectedZone = zones.find(z => z.id === selectedZoneId);
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="bg-gray-800 text-white px-6 py-4">
-        <h1 className="text-2xl font-bold">MapCanvas Test - Layout Editor</h1>
-        <p className="text-sm text-gray-300 mt-1">
-          Testing MapLibre integration with sample zones in San Francisco
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900">Map Test - Layout {layoutId}</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Testing MapCanvas component with real backend API
         </p>
-      </header>
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Map */}
-        <div className="flex-1 relative">
-          <MapCanvas
-            zones={sampleZones as any}
-            selectedZoneId={selectedZoneId}
-            onZoneClick={handleZoneClick}
-            center={[-122.4195, 37.7747]}
-            zoom={16}
-          />
-        </div>
+      {/* Main Content */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
+          {/* Map Container */}
+          <div className="lg:col-span-3 bg-white rounded-lg shadow-lg overflow-hidden h-full">
+            <MapErrorBoundary>
+              <MapCanvas
+                zones={zones}
+                selectedZoneId={selectedZoneId}
+                onZoneClick={setSelectedZoneId}
+                isLoading={isLoading}
+                className="h-full"
+              />
+            </MapErrorBoundary>
+          </div>
 
-        {/* Sidebar */}
-        <div className="w-80 bg-gray-50 border-l overflow-y-auto">
-          <div className="p-4">
-            <h2 className="text-lg font-semibold mb-4">Zones</h2>
-            
-            <div className="space-y-2">
-              {sampleZones.map((zone) => (
-                <button
-                  key={zone.id}
-                  onClick={() => handleZoneClick(zone.id)}
-                  className={`w-full text-left p-3 rounded border transition-colors ${
-                    selectedZoneId === zone.id
-                      ? 'bg-blue-50 border-blue-500'
-                      : 'bg-white border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: zone.color }}
-                    />
-                    <span className="font-medium">{zone.name}</span>
-                  </div>
-                  <div className="text-xs text-gray-600 mt-1">
-                    {zone.zone_type} • {zone.surface}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {zone.area_sqm} m² • {zone.perimeter_m} m perimeter
-                  </div>
-                </button>
-              ))}
-            </div>
+          {/* Sidebar */}
+          <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6 overflow-auto">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Zone Info</h2>
 
-            {selectedZone && (
-              <div className="mt-6 p-4 bg-white rounded border">
-                <h3 className="font-semibold mb-3">Selected Zone</h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="text-gray-600">Name:</span>{' '}
-                    <span className="font-medium">{selectedZone.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Type:</span>{' '}
-                    <span className="font-medium">{selectedZone.zone_type}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Surface:</span>{' '}
-                    <span className="font-medium">{selectedZone.surface}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Area:</span>{' '}
-                    <span className="font-medium">{selectedZone.area_sqm} m²</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Color:</span>{' '}
-                    <div className="inline-flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded border"
-                        style={{ backgroundColor: selectedZone.color }}
-                      />
-                      <span className="font-mono text-xs">{selectedZone.color}</span>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-800 font-semibold mb-2">Failed to load zones</p>
+                <p className="text-xs text-red-600">{(error as any).message || 'Unknown error'}</p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && zones.length === 0 && (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-5xl mb-3">🗺️</div>
+                <p className="text-gray-600">No zones found for this layout</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Try creating zones via the API or switch to a different layout
+                </p>
+              </div>
+            )}
+
+            {/* Stats */}
+            {!isLoading && !error && zones.length > 0 && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">Total Zones</p>
+                  <p className="text-2xl font-bold text-blue-600">{zones.length}</p>
+                </div>
+
+                {selectedZone ? (
+                  <div className="border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Selected Zone</h3>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">Name</p>
+                        <p className="font-semibold text-gray-900">{selectedZone.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Type</p>
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: selectedZone.color || getZoneTypeColor(selectedZone.zone_type) }}
+                          />
+                          <p className="text-sm text-gray-900">{selectedZone.zone_type}</p>
+                        </div>
+                      </div>
+                      {selectedZone.surface && (
+                        <div>
+                          <p className="text-xs text-gray-500">Surface</p>
+                          <p className="text-sm text-gray-900">{selectedZone.surface}</p>
+                        </div>
+                      )}
+                      {selectedZone.area_sqm && (
+                        <div>
+                          <p className="text-xs text-gray-500">Area</p>
+                          <p className="text-sm text-gray-900">{selectedZone.area_sqm.toFixed(1)} m²</p>
+                        </div>
+                      )}
+                      {selectedZone.perimeter_m && (
+                        <div>
+                          <p className="text-xs text-gray-500">Perimeter</p>
+                          <p className="text-sm text-gray-900">{selectedZone.perimeter_m.toFixed(1)} m</p>
+                        </div>
+                      )}
                     </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500 text-sm">
+                    Click a zone on the map to see details
+                  </div>
+                )}
+
+                {/* Zone List */}
+                <div className="border-t pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">All Zones</h3>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {zones.map((zone) => (
+                      <button
+                        key={zone.id}
+                        onClick={() => setSelectedZoneId(zone.id)}
+                        className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                          selectedZoneId === zone.id
+                            ? 'bg-blue-100 text-blue-900'
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded flex-shrink-0"
+                            style={{ backgroundColor: zone.color || getZoneTypeColor(zone.zone_type) }}
+                          />
+                          <span className="truncate">{zone.name}</span>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
+          </div>
+        </div>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded border border-blue-200 text-sm">
-              <p className="font-semibold text-blue-900 mb-2">Test Features:</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-800">
-                <li>Click zones to select</li>
-                <li>Zoom/pan with mouse</li>
-                <li>Auto-fit to zones bounds</li>
-                <li>Zone labels on map</li>
-                <li>Color-coded polygons</li>
-              </ul>
+        {/* Footer Info */}
+        <div className="mt-6 bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between text-sm">
+            <div>
+              <span className="text-gray-600">Layout ID:</span>
+              <span className="ml-2 font-mono text-gray-900">{layoutId}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">API:</span>
+              <span className="ml-2 font-mono text-gray-900">
+                {process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Status:</span>
+              <span className={`ml-2 font-semibold ${
+                isLoading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {isLoading ? 'Loading' : error ? 'Error' : 'Ready'}
+              </span>
             </div>
           </div>
         </div>
