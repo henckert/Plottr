@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL Test</title>
+</head>
+<body>
+    <h1>WebGL Support Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        const resultDiv = document.getElementById('result');
+        
+        if (gl) {
+            resultDiv.innerHTML = `
+                <p style="color: green;"><strong>✅ WebGL IS supported</strong></p>
+                <p>Vendor: ${gl.getParameter(gl.VENDOR)}</p>
+                <p>Renderer: ${gl.getParameter(gl.RENDERER)}</p>
+                <p>Version: ${gl.getParameter(gl.VERSION)}</p>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <p style="color: red;"><strong>❌ WebGL is NOT supported</strong></p>
+                <p>MapLibre GL requires WebGL support to render maps.</p>
+            `;
+        }
+    </script>
+</body>
+</html>

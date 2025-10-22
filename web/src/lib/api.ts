@@ -19,17 +19,38 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Types (from backend OpenAPI)
+// Types (from backend OpenAPI - matches src/schemas/venues.schema.ts)
 export interface Venue {
-  id: string;
+  id: number;
+  club_id?: number;
   name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  location: GeoJSON.Point;
+  address?: string;
+  center_point?: any; // GeoJSON Point
+  bbox?: any; // GeoJSON Polygon (venue boundary)
+  tz?: string;
+  published?: boolean;
+  version_token?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface VenueCreate {
+  club_id: number;
+  name: string;
+  address?: string;
+  center_point?: any;
+  bbox?: any;
+  tz?: string;
+  published?: boolean;
+}
+
+export interface VenueUpdate {
+  name?: string;
+  address?: string;
+  center_point?: any;
+  bbox?: any;
+  tz?: string;
+  published?: boolean;
 }
 
 export interface Pitch {
@@ -92,21 +113,21 @@ export const venueApi = {
     return response.data;
   },
 
-  getById: async (id: string) => {
-    const response = await apiClient.get<Venue>(`/venues/${id}`);
-    return response.data;
+  getById: async (id: number | string) => {
+    const response = await apiClient.get<{ data: Venue }>(`/venues/${id}`);
+    return response.data.data;
   },
 
-  create: async (data: Omit<Venue, 'id' | 'created_at' | 'updated_at'>) => {
-    const response = await apiClient.post<Venue>('/venues', data);
-    return response.data;
+  create: async (data: VenueCreate) => {
+    const response = await apiClient.post<{ data: Venue }>('/venues', data);
+    return response.data.data;
   },
 
-  update: async (id: string, data: Partial<Venue>, versionToken: string) => {
-    const response = await apiClient.put<Venue>(`/venues/${id}`, data, {
+  update: async (id: number | string, data: VenueUpdate, versionToken: string) => {
+    const response = await apiClient.put<{ data: Venue }>(`/venues/${id}`, data, {
       headers: { 'If-Match': versionToken },
     });
-    return response.data;
+    return response.data.data;
   },
 };
 
