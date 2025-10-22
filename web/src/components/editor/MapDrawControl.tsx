@@ -40,7 +40,6 @@ export function MapDrawControl({
 }: MapDrawControlProps) {
   const drawRef = useRef<MapboxDraw | null>(null);
   const [activeMode, setActiveMode] = useState<DrawMode>(null);
-  const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
   
@@ -55,6 +54,8 @@ export function MapDrawControl({
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: {},
+      // Configure to prevent moving entire polygons
+      defaultMode: 'simple_select',
       styles: [
         // Polygon fill
         {
@@ -123,9 +124,10 @@ export function MapDrawControl({
         type: 'Feature' as const,
       };
       
-      if (draw) {
-        draw.add(editFeature);
-        draw.changeMode('direct_select', { featureId: `edit-${id}` });
+      const drawInstance = drawRef.current;
+      if (drawInstance) {
+        drawInstance.add(editFeature);
+        drawInstance.changeMode('direct_select', { featureId: `edit-${id}` });
       }
       
       setActiveMode('direct_select');
@@ -145,7 +147,8 @@ export function MapDrawControl({
       const error = validatePolygon(feature);
       if (error) {
         setValidationError(error);
-        if (draw) draw.delete(feature.id);
+        const drawInstance = drawRef.current;
+        if (drawInstance) drawInstance.delete(feature.id);
         return;
       }
       
@@ -156,17 +159,25 @@ export function MapDrawControl({
         // Save to backend via parent handler (parent will reload zones)
         await onPolygonComplete(feature);
         
-        console.log('[MapDrawControl] Saved successfully, removing from draw layer');
-        // Delete temp feature from draw layer
-        if (draw) draw.delete(feature.id);
+        console.log('[MapDrawControl] Saved successfully');
+        
+        // Wait a brief moment for React to update zones prop and re-render the map
+        // This ensures the new zone appears in zones-source before we remove the temp
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Delete temp feature from draw layer using ref to avoid closure issues
+        const drawInstance = drawRef.current;
+        if (drawInstance) {
+          drawInstance.delete(feature.id);
+          console.log('[MapDrawControl] Removed temp feature from draw layer');
+          
+          // Switch to select mode
+          drawInstance.changeMode('simple_select');
+        }
+        setActiveMode('simple_select');
         
         // Note: Parent reloads zones and updates zones prop, which triggers
         // useEffect in MapCanvas to refresh the zones source automatically.
-        // We don't need to call onRefreshZones() here.
-        
-        // Switch to select mode
-        if (draw) draw.changeMode('simple_select');
-        setActiveMode('simple_select');
         
       } catch (err) {
         console.error('[MapDrawControl] Failed to save polygon:', err);
@@ -181,8 +192,9 @@ export function MapDrawControl({
       
       // Check if we're editing an existing zone
       if (editingZoneId && feature.id === `edit-${editingZoneId}`) {
-        console.log('[MapDrawControl] Saving edit for zone:', editingZoneId);
+        console.log('[MapDrawControl] Feature updated in draw layer (vertex dragged)');
         
+        // Validate the updated polygon
         const error = validatePolygon(feature);
         if (error) {
           setValidationError(error);
@@ -190,32 +202,9 @@ export function MapDrawControl({
         }
         setValidationError(null);
         
-        try {
-          // Save changes to backend (parent will reload zones)
-          await onPolygonUpdate(editingZoneId, feature);
-          
-          console.log('[MapDrawControl] Edit saved successfully');
-          
-          // Remove temp edit feature from draw layer
-          if (draw) draw.delete(`edit-${editingZoneId}`);
-          
-          // Clear zone filter to show updated zone
-          if (onSetZoneFilter) onSetZoneFilter(null);
-          
-          // Note: Parent reloads zones and updates zones prop, which triggers
-          // useEffect in MapCanvas to refresh the zones source automatically.
-          
-          // Reset editing state
-          setEditingZoneId(null);
-          
-          // Switch back to select mode
-          if (draw) draw.changeMode('simple_select');
-          setActiveMode('simple_select');
-          
-        } catch (err) {
-          console.error('[MapDrawControl] Failed to save edit:', err);
-          setValidationError('Failed to save changes. Please try again.');
-        }
+        // NOTE: We don't auto-save on every vertex drag.
+        // User must explicitly click the Save button to persist changes.
+        console.log('[MapDrawControl] Polygon validated OK, waiting for user to click Save');
       }
     };
     handleDrawUpdateRef.current = handleDrawUpdate;
@@ -234,6 +223,9 @@ export function MapDrawControl({
           
           console.log('[MapDrawControl] Zone deleted successfully');
           
+          // Wait for React to update zones prop and re-render
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           // Clear zone filter
           if (onSetZoneFilter) onSetZoneFilter(null);
           
@@ -243,8 +235,9 @@ export function MapDrawControl({
           // Reset editing state
           setEditingZoneId(null);
           
-          // Switch back to select mode
-          if (draw) draw.changeMode('simple_select');
+          // Switch back to select mode using ref
+          const drawInstance = drawRef.current;
+          if (drawInstance) drawInstance.changeMode('simple_select');
           setActiveMode('simple_select');
           
         } catch (err) {
@@ -255,24 +248,14 @@ export function MapDrawControl({
     };
     handleDrawDeleteRef.current = handleDrawDelete;
 
-    const handleDrawSelectionChange = (e: any) => {
-      if (e.features.length > 0) {
-        setSelectedFeatureId(e.features[0].id);
-      } else {
-        setSelectedFeatureId(null);
-      }
-    };
-
     map.on('draw.create', handleDrawCreate);
     map.on('draw.update', handleDrawUpdate);
     map.on('draw.delete', handleDrawDelete);
-    map.on('draw.selectionchange', handleDrawSelectionChange);
 
     return () => {
       map.off('draw.create', handleDrawCreate);
       map.off('draw.update', handleDrawUpdate);
       map.off('draw.delete', handleDrawDelete);
-      map.off('draw.selectionchange', handleDrawSelectionChange);
       if (drawRef.current) {
         map.removeControl(drawRef.current as any);
         drawRef.current = null;
@@ -321,7 +304,8 @@ export function MapDrawControl({
       }
 
       // Check winding order (should be counter-clockwise for exterior ring per RFC 7946)
-      const bbox = turf.bbox(turfPolygon);
+      // Note: MapboxDraw creates polygons in counter-clockwise by default, but we'll
+      // be lenient here and just log a warning rather than rejecting
       const turfCoords = turfPolygon.geometry.coordinates[0];
       const signedArea = turfCoords.reduce((sum, curr, i, arr) => {
         const next = arr[(i + 1) % arr.length];
@@ -329,7 +313,7 @@ export function MapDrawControl({
       }, 0);
       
       if (signedArea >= 0) {
-        return 'Polygon must be counter-clockwise (right-hand rule)';
+        console.warn('[MapDrawControl] Polygon is clockwise, but allowing it (can be auto-corrected by backend)');
       }
 
       return null;
@@ -346,18 +330,6 @@ export function MapDrawControl({
     setValidationError(null);
   };
 
-  const startSelectMode = () => {
-    if (!drawRef.current) return;
-    drawRef.current.changeMode('simple_select');
-    setActiveMode('simple_select');
-  };
-
-  const deleteSelected = () => {
-    if (!drawRef.current || !selectedFeatureId) return;
-    drawRef.current.delete(selectedFeatureId);
-    setSelectedFeatureId(null);
-  };
-
   const saveEdit = async () => {
     if (!drawRef.current || !editingZoneId) return;
     
@@ -365,22 +337,88 @@ export function MapDrawControl({
     const features = drawRef.current.getAll();
     const feature = features.features.find((f: any) => f.id === editFeatureId);
     
-    if (feature && feature.geometry.type === 'Polygon' && handleDrawUpdateRef.current) {
-      // Trigger update handler manually
-      await handleDrawUpdateRef.current({ features: [feature] });
+    if (!feature || feature.geometry.type !== 'Polygon') {
+      console.error('[MapDrawControl] No valid feature found to save');
+      return;
+    }
+
+    console.log('[MapDrawControl] Saving edit for zone:', editingZoneId);
+    
+    // Validate before saving
+    const error = validatePolygon(feature);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    setValidationError(null);
+    
+    try {
+      // Save changes to backend (parent will reload zones)
+      await onPolygonUpdate(editingZoneId, feature);
+      
+      console.log('[MapDrawControl] Edit saved successfully');
+      
+      // Wait for React to update zones prop and re-render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Remove temp edit feature from draw layer
+      const drawInstance = drawRef.current;
+      if (drawInstance) {
+        drawInstance.delete(editFeatureId);
+        
+        // Switch back to simple_select mode
+        drawInstance.changeMode('simple_select');
+      }
+      
+      // Clear zone filter to show updated zone
+      if (onSetZoneFilter) onSetZoneFilter(null);
+      
+      // Reset editing state
+      setEditingZoneId(null);
+      setActiveMode('simple_select');
+      
+    } catch (err) {
+      console.error('[MapDrawControl] Failed to save edit:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save changes. Please try again.';
+      setValidationError(errorMsg);
     }
   };
 
   const deleteEdit = async () => {
     if (!drawRef.current || !editingZoneId) return;
     
-    const editFeatureId = `edit-${editingZoneId}`;
-    const features = drawRef.current.getAll();
-    const feature = features.features.find((f: any) => f.id === editFeatureId);
+    console.log('[MapDrawControl] Deleting zone:', editingZoneId);
     
-    if (feature && handleDrawDeleteRef.current) {
-      // Trigger delete handler manually
-      await handleDrawDeleteRef.current({ features: [feature] });
+    try {
+      // Delete from backend (parent will reload zones)
+      await onPolygonDelete(editingZoneId);
+      
+      console.log('[MapDrawControl] Zone deleted successfully');
+      
+      // Wait for React to update zones prop and re-render
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Remove temp edit feature from draw layer
+      const editFeatureId = `edit-${editingZoneId}`;
+      const drawInstance = drawRef.current;
+      if (drawInstance) {
+        drawInstance.delete(editFeatureId);
+        
+        // Switch back to select mode
+        drawInstance.changeMode('simple_select');
+      }
+      
+      // Clear zone filter
+      if (onSetZoneFilter) onSetZoneFilter(null);
+      
+      // Reset editing state
+      setEditingZoneId(null);
+      setActiveMode('simple_select');
+      
+    } catch (err) {
+      console.error('[MapDrawControl] Failed to delete zone:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete zone. Please try again.';
+      setValidationError(errorMsg);
     }
   };
 

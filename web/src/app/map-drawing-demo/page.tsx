@@ -83,15 +83,20 @@ export default function MapDrawingDemoPage() {
   };
 
   const handlePolygonUpdate = async (id: string, geojson: GeoJSON.Feature<GeoJSON.Polygon>) => {
-    console.log('[DrawDemo] Polygon updated:', id, geojson);
+    console.log('[DrawDemo] Polygon UPDATE called for ID:', id);
+    console.log('[DrawDemo] Updated geometry:', geojson.geometry);
     
     try {
       // Find the zone to get its version_token
       const zone = savedPolygons.find(p => p.id.toString() === id);
       if (!zone) {
         console.error('[DrawDemo] Zone not found for update:', id);
+        alert(`Zone ${id} not found in local state`);
         return;
       }
+
+      console.log('[DrawDemo] Found zone:', zone);
+      console.log('[DrawDemo] Sending PUT request to:', `http://localhost:3001/api/zones/${id}`);
 
       const response = await fetch(`http://localhost:3001/api/zones/${id}`, {
         method: 'PUT',
@@ -107,6 +112,8 @@ export default function MapDrawingDemoPage() {
           boundary: geojson.geometry,
         }),
       });
+
+      console.log('[DrawDemo] PUT response status:', response.status);
 
       if (!response.ok) {
         const error = await response.json();
@@ -132,12 +139,28 @@ export default function MapDrawingDemoPage() {
   };
 
   const handlePolygonDelete = async (id: string) => {
-    console.log('[DrawDemo] Polygon deleted:', id);
+    console.log('[DrawDemo] Polygon DELETE called for ID:', id);
     
     try {
+      // Find the zone to get its version_token
+      const zone = savedPolygons.find(p => p.id.toString() === id);
+      if (!zone) {
+        console.error('[DrawDemo] Zone not found for delete:', id);
+        alert(`Zone ${id} not found in local state`);
+        return;
+      }
+
+      console.log('[DrawDemo] Found zone:', zone);
+      console.log('[DrawDemo] Sending DELETE request to:', `http://localhost:3001/api/zones/${id}`);
+
       const response = await fetch(`http://localhost:3001/api/zones/${id}`, {
         method: 'DELETE',
+        headers: {
+          'If-Match': zone.version_token, // Required for optimistic concurrency
+        },
       });
+
+      console.log('[DrawDemo] DELETE response status:', response.status);
 
       if (!response.ok) {
         const error = await response.json();
