@@ -17,8 +17,12 @@ import { venueApi, pitchApi } from '@/lib/api';
 import type { Venue, Pitch } from '@/lib/api';
 
 // Dynamically import map components (client-side only)
-const MapDrawControl = dynamic(
-  () => import('@/components/editor/MapDrawControl').then((mod) => mod.MapDrawControl),
+const MapCanvas = dynamic(
+  () => import('@/components/editor/MapCanvasRobust').then((mod) => mod.MapCanvas),
+  { ssr: false }
+);
+const MapErrorBoundary = dynamic(
+  () => import('@/components/editor/MapErrorBoundary').then((mod) => mod.MapErrorBoundary),
   { ssr: false }
 );
 
@@ -61,6 +65,7 @@ export default function VenueDetailPage({ params }: VenueDetailPageProps) {
       const timer = setTimeout(() => setSuccessMessage(null), 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [successMessage]);
 
   const loadData = async () => {
@@ -104,15 +109,7 @@ export default function VenueDetailPage({ params }: VenueDetailPageProps) {
     setPitchForm({ name: '', sport: '', level: '', geometry: null });
   };
 
-  const handlePolygonDrawn = (feature: any) => {
-    console.log('[VenueDetailPage] Polygon drawn:', feature);
-    setPitchForm((prev) => ({ ...prev, geometry: feature.geometry }));
-  };
 
-  const handlePolygonUpdated = (feature: any) => {
-    console.log('[VenueDetailPage] Polygon updated:', feature);
-    setPitchForm((prev) => ({ ...prev, geometry: feature.geometry }));
-  };
 
   const handleSavePitch = async () => {
     try {
@@ -212,6 +209,22 @@ export default function VenueDetailPage({ params }: VenueDetailPageProps) {
     setSelectedPitch(pitch);
   };
 
+  // Handlers for polygon drawing
+  const handlePolygonDrawn = async (feature: GeoJSON.Feature<GeoJSON.Polygon>) => {
+    console.log('[VenueDetail] Polygon drawn:', feature);
+    setPitchForm({ ...pitchForm, geometry: feature.geometry });
+  };
+
+  const handlePolygonUpdated = async (id: string, feature: GeoJSON.Feature<GeoJSON.Polygon>) => {
+    console.log('[VenueDetail] Polygon updated:', id, feature);
+    setPitchForm({ ...pitchForm, geometry: feature.geometry });
+  };
+
+  const handlePolygonDeleted = async (id: string) => {
+    console.log('[VenueDetail] Polygon deleted:', id);
+    setPitchForm({ ...pitchForm, geometry: null });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -254,15 +267,15 @@ export default function VenueDetailPage({ params }: VenueDetailPageProps) {
               >
                 ← Back
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">{venue.name}</h1>
-              {!venue.published && (
+              <h1 className="text-2xl font-bold text-gray-900">{venue!.name}</h1>
+              {!venue!.published && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded">
                   Draft
                 </span>
               )}
             </div>
             <button
-              onClick={() => router.push(`/venues/${venue.id}/edit`)}
+              onClick={() => router.push(`/venues/${venue!.id}/edit`)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
               Edit Venue
@@ -273,110 +286,224 @@ export default function VenueDetailPage({ params }: VenueDetailPageProps) {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Venue Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Venue Info & Pitch List */}
           <div className="lg:col-span-1 space-y-6">
             {/* Venue Details Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Details</h2>
-              
-              <dl className="space-y-3">
-                {venue.address && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Venue Details</h2>
+              <dl className="space-y-2 text-sm">
+                {venue && venue.address && (
                   <>
-                    <dt className="text-sm font-medium text-gray-500">Address</dt>
-                    <dd className="text-sm text-gray-900">{venue.address}</dd>
+                    <dt className="font-medium text-gray-500">Address</dt>
+                    <dd className="text-gray-900">{venue.address}</dd>
                   </>
                 )}
-                
-                {venue.tz && (
+                {venue && venue.tz && (
                   <>
-                    <dt className="text-sm font-medium text-gray-500 mt-4">Timezone</dt>
-                    <dd className="text-sm text-gray-900">{venue.tz}</dd>
+                    <dt className="font-medium text-gray-500 mt-2">Timezone</dt>
+                    <dd className="text-gray-900">{venue.tz}</dd>
                   </>
                 )}
-                
-                {venue.center_point && (
-                  <>
-                    <dt className="text-sm font-medium text-gray-500 mt-4">Coordinates</dt>
-                    <dd className="text-sm text-gray-900 font-mono">
-                      {venue.center_point.coordinates[1].toFixed(6)}, {venue.center_point.coordinates[0].toFixed(6)}
-                    </dd>
-                  </>
-                )}
-                
-                <dt className="text-sm font-medium text-gray-500 mt-4">Created</dt>
-                <dd className="text-sm text-gray-900">
-                  {new Date(venue.created_at).toLocaleDateString()}
-                </dd>
-                
-                <dt className="text-sm font-medium text-gray-500 mt-4">Last Updated</dt>
-                <dd className="text-sm text-gray-900">
-                  {new Date(venue.updated_at).toLocaleDateString()}
-                </dd>
               </dl>
             </div>
 
-            {/* Actions Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions</h2>
-              <div className="space-y-3">
+            {/* Pitches List Card */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Pitches ({pitches.length})
+                </h2>
                 <button
-                  onClick={() => alert('Pitch editor coming in next subtask!')}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                  onClick={handleStartAddPitch}
+                  disabled={isAddingPitch || isEditingPitch}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  + Add Pitch
-                </button>
-                <button
-                  onClick={() => router.push(`/venues/${venue.id}/edit`)}
-                  className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Edit Venue
+                  + Add
                 </button>
               </div>
-            </div>
-          </div>
 
-          {/* Right Column - Map & Pitches */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Map Placeholder */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Location</h2>
-              <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg font-medium">Map View</p>
-                  <p className="text-sm mt-2">Map integration coming in TASK 4.4.2</p>
-                  {venue.bbox && (
-                    <p className="text-xs mt-2 text-green-600">✅ Boundary defined</p>
-                  )}
+              {pitches.length === 0 && !isAddingPitch && (
+                <div className="text-center text-gray-500 py-8 text-sm">
+                  <p>No pitches yet</p>
+                  <p className="text-xs mt-1">Click "+ Add" to create one</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {pitches.map((pitch) => (
+                  <div
+                    key={pitch.id}
+                    onClick={() => handlePitchClick(pitch)}
+                    className={`p-3 rounded border cursor-pointer transition-colors ${
+                      selectedPitch?.id === pitch.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 text-sm truncate">
+                          {pitch.name}
+                        </h3>
+                        {pitch.sport && (
+                          <p className="text-xs text-gray-500 mt-0.5">{pitch.sport}</p>
+                        )}
+                      </div>
+                      {!isAddingPitch && !isEditingPitch && selectedPitch?.id === pitch.id && (
+                        <div className="flex space-x-1 ml-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPitch(pitch);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-100"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePitch(pitch);
+                            }}
+                            className="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded hover:bg-red-100"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pitch Form (when adding/editing) */}
+            {(isAddingPitch || isEditingPitch) && (
+              <div className="bg-white rounded-lg shadow p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {isEditingPitch ? 'Edit Pitch' : 'New Pitch'}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={pitchForm.name}
+                      onChange={(e) => setPitchForm({ ...pitchForm, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Main Pitch"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sport
+                    </label>
+                    <input
+                      type="text"
+                      value={pitchForm.sport}
+                      onChange={(e) => setPitchForm({ ...pitchForm, sport: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Soccer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Level
+                    </label>
+                    <input
+                      type="text"
+                      value={pitchForm.level}
+                      onChange={(e) => setPitchForm({ ...pitchForm, level: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Professional"
+                    />
+                  </div>
+                  <div className="pt-2">
+                    <p className="text-xs text-gray-600 mb-2">
+                      {pitchForm.geometry ? '✅ Boundary drawn' : '⚠️ Draw boundary on map'}
+                    </p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleSavePitch}
+                        disabled={!pitchForm.name || !pitchForm.geometry}
+                        className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelPitch}
+                        className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Pitches List Placeholder */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Pitches</h2>
-                <button
-                  onClick={() => alert('Pitch editor coming in TASK 4.4.2!')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-                >
-                  + Add Pitch
-                </button>
-              </div>
-              <div className="text-center text-gray-500 py-12">
-                <p className="text-lg font-medium">No pitches yet</p>
-                <p className="text-sm mt-2">Add your first pitch to get started</p>
-                <p className="text-xs mt-2 text-blue-600">Pitch editor coming in TASK 4.4.2</p>
-              </div>
+          {/* Right Side - Map */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '700px' }}>
+              {venue && (
+                <MapErrorBoundary>
+                  <MapCanvas
+                    zones={pitches
+                      .filter((p) => p.geometry)
+                      .map((p) => ({
+                        id: p.id,
+                        layout_id: venue!.id,
+                        name: p.name,
+                        zone_type: 'pitch' as const,
+                        surface: 'grass',
+                        color: selectedPitch?.id === p.id ? '#3b82f6' : '#10b981',
+                        boundary: p.geometry,
+                        rotation_deg: p.rotation_deg || 0,
+                        version_token: p.version_token || '',
+                        created_at: p.created_at,
+                        updated_at: p.updated_at,
+                      }))}
+                    enableDrawing={true}
+                    drawMode="zone"
+                    onPolygonCreate={handlePolygonDrawn}
+                    onPolygonUpdate={handlePolygonUpdated}
+                    onPolygonDelete={handlePolygonDeleted}
+                    center={getMapCenter()}
+                    zoom={17}
+                    isLoading={false}
+                  />
+                </MapErrorBoundary>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Success Message */}
-      <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-        ✅ Venue created successfully!
-      </div>
+      {/* Success Message Toast */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+          ✅ {successMessage}
+        </div>
+      )}
+
+      {/* Error Message Toast */}
+      {error && venue && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          ❌ {error}
+          <button
+            onClick={() => setError(null)}
+            className="ml-4 text-white hover:text-gray-200"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,3 +7,17 @@ logs/
 dist/
 .DS_Store
 
+# Builds / caches
+.next/
+web/.next/
+dist/
+web/dist/
+node_modules/
+web/node_modules/
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+*.log
+*.tmp
+
