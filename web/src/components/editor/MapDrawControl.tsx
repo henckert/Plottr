@@ -153,15 +153,16 @@ export function MapDrawControl({
       console.log('[MapDrawControl] Polygon created, saving to backend...');
       
       try {
-        // Save to backend via parent handler
+        // Save to backend via parent handler (parent will reload zones)
         await onPolygonComplete(feature);
         
         console.log('[MapDrawControl] Saved successfully, removing from draw layer');
         // Delete temp feature from draw layer
         if (draw) draw.delete(feature.id);
         
-        // Refresh zones source to show the new zone
-        if (onRefreshZones) onRefreshZones();
+        // Note: Parent reloads zones and updates zones prop, which triggers
+        // useEffect in MapCanvas to refresh the zones source automatically.
+        // We don't need to call onRefreshZones() here.
         
         // Switch to select mode
         if (draw) draw.changeMode('simple_select');
@@ -190,7 +191,7 @@ export function MapDrawControl({
         setValidationError(null);
         
         try {
-          // Save changes to backend
+          // Save changes to backend (parent will reload zones)
           await onPolygonUpdate(editingZoneId, feature);
           
           console.log('[MapDrawControl] Edit saved successfully');
@@ -201,8 +202,8 @@ export function MapDrawControl({
           // Clear zone filter to show updated zone
           if (onSetZoneFilter) onSetZoneFilter(null);
           
-          // Refresh zones source
-          if (onRefreshZones) onRefreshZones();
+          // Note: Parent reloads zones and updates zones prop, which triggers
+          // useEffect in MapCanvas to refresh the zones source automatically.
           
           // Reset editing state
           setEditingZoneId(null);
@@ -228,7 +229,7 @@ export function MapDrawControl({
         console.log('[MapDrawControl] Deleting zone:', editingZoneId);
         
         try {
-          // Delete from backend
+          // Delete from backend (parent will reload zones)
           await onPolygonDelete(editingZoneId);
           
           console.log('[MapDrawControl] Zone deleted successfully');
@@ -236,8 +237,8 @@ export function MapDrawControl({
           // Clear zone filter
           if (onSetZoneFilter) onSetZoneFilter(null);
           
-          // Refresh zones source
-          if (onRefreshZones) onRefreshZones();
+          // Note: Parent reloads zones and updates zones prop, which triggers
+          // useEffect in MapCanvas to refresh the zones source automatically.
           
           // Reset editing state
           setEditingZoneId(null);
