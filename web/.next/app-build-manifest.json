@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/venues/new/page": [
+    "/sessions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/venues/new/page.js"
+      "static/chunks/app/sessions/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",

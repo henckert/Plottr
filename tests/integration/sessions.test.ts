@@ -106,10 +106,11 @@ describe('sessions integration', () => {
     const venueId = venueRes.body.data[0].id;
     const pitchRes = await request(app).get('/api/pitches').expect(200);
     const pitchId = pitchRes.body.data[0].id;
-    // create session
+    // create session with time far in future to avoid overlap with seeded data
+    // Seeded session on pitch 1 is tomorrow; use 30 days in future
     const now = new Date();
-    const startTs = new Date(now.getTime() + 86400000).toISOString(); // tomorrow
-    const endTs = new Date(now.getTime() + 90000000).toISOString(); // tomorrow + 1 hour
+    const startTs = new Date(now.getTime() + 30 * 86400000).toISOString(); // 30 days from now
+    const endTs = new Date(now.getTime() + 30 * 86400000 + 3600000).toISOString(); // 30 days + 1 hour
     const res = await request(app)
       .post('/api/sessions')
       .send({

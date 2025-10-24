@@ -2,9 +2,9 @@
 
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
-**Last Updated:** October 20, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (2/16-22) ✅  
-**Project Completion:** 33/88 subtasks (38%)
+**Last Updated:** October 24, 2025  
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (6/16-22) ✅  
+**Project Completion:** 37/88 subtasks (42%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 2/16-22 (12%) | 5-7 days | ~1 day |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 6/16-22 (33%) | 5-7 days | ~3 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **35% Complete** | **31/68-94** | **19-26 days** | **~8 days** |
+| **TOTAL** | **39% Complete** | **37/68-94** | **19-26 days** | **~10 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -296,7 +296,7 @@
 
 ## TASK 4: Frontend - Layout Editor 🚧 IN PROGRESS
 
-**Status:** 🚧 IN PROGRESS (1/16-22 complete)  
+**Status:** 🚧 IN PROGRESS (5/16-22 complete)  
 **Started:** October 20, 2025  
 **Estimated Time:** 5-7 days  
 **Dependencies:** ✅ TASK 2 (Layouts API), ✅ TASK 3 (Zones & Assets API)
@@ -356,14 +356,101 @@
   - **Git Commit:** `feat(frontend): TASK 4.2 - Map Component Integration`
   - **Next Steps:** Add polygon drawing tools (MapLibre Draw plugin)
 
+- [x] ✅ **4.3: Sessions List & Pagination**
+  - **Status:** Complete - Cursor-based pagination with filters
+  - **Files Created:**
+    - web/src/app/sessions/page.tsx (215 lines)
+    - TASK_4.5_COMPLETE.md (569+ lines completion summary)
+  - **Features Implemented:**
+    - Cursor-based pagination (50 per page, configurable)
+    - Filter by venue_id, pitch_id, date range
+    - Responsive table with delete confirmation modals
+    - Loading states, empty states, error handling
+  - **API Integration:** React Query hooks with optimistic updates
+  - **Test Coverage:** 13 integration tests passing
+  - **Git Commit:** `feat(web): complete session management CRUD`
+  - **Next Steps:** Create page, Detail page, Edit page
+
+- [x] ✅ **4.4: Session Create & Detail Pages**
+  - **Status:** Complete - Full CRUD with validation
+  - **Files Created:**
+    - web/src/app/sessions/new/page.tsx (308 lines)
+    - web/src/app/sessions/[id]/page.tsx (286 lines)
+  - **Features Implemented:**
+    - Create form with venue/pitch/team pickers
+    - Start/end datetime-local inputs with validation
+    - Detail page with delete/edit actions
+    - Version token handling for optimistic concurrency
+  - **Validation:** Zod schemas, timezone-aware timestamps
+  - **Test Coverage:** 13 integration tests passing
+  - **Git Commit:** `feat(web): complete session management CRUD`
+  - **Next Steps:** Edit page with overlap detection
+
+- [x] ✅ **4.5: Session Edit Page & Overlap Detection**
+  - **Status:** Complete - Full CRUD with conflict detection
+  - **Files Created:**
+    - web/src/app/sessions/[id]/edit/page.tsx (469 lines)
+    - tests/unit/services/sessions.service.test.ts (318 lines, 12 tests)
+    - src/data/sessions.repo.ts (97 lines overlap query method)
+    - src/services/sessions.service.ts (overlap check logic)
+  - **Features Implemented:**
+    - Edit form with prefilled data (venue, pitch, team, times, notes)
+    - Server-side overlap detection via PostgreSQL tsrange queries
+    - Version token handling (If-Match header) for optimistic concurrency
+    - Delete confirmation with cascade warnings
+    - Responsive layout with loading/error states
+  - **Overlap Detection Logic:**
+    - Query: `tsrange(start_ts, end_ts) && tsrange(new_start, new_end)`
+    - Excludes current session (WHERE id != :id)
+    - Filters by same pitch_id
+    - Returns conflicting sessions with details
+  - **Test Coverage:** 
+    - 12 unit tests (overlap detection, validation, edge cases)
+    - 13 integration tests (full CRUD lifecycle)
+    - All 504 backend unit tests passing
+  - **Total LOC:** 2,526 lines (Edit page 469, Tests 318, Backend 97, Other 1,642)
+  - **Git Commits:** 
+    - `3ece4b5`: feat(sessions): add edit page with server-side overlap detection
+    - `5b4fc32`: docs: update TASK 4.5 completion with edit page and overlap detection
+  - **Next Steps:** Polygon drawing tools, zone management UI
+
+- [x] ✅ **4.6: Polygon Drawing Tools**
+  - **Status:** Complete - Interactive zone drawing with MapLibre Draw
+  - **Files Created:**
+    - web/src/components/editor/DrawToolbar.tsx (125 lines)
+    - web/src/components/editor/ZonePropertiesPanel.tsx (324 lines)
+    - web/src/components/editor/MapCanvasWithDraw.tsx (441 lines)
+    - web/src/lib/geospatial-client.ts (243 lines)
+    - web/src/lib/maplibre-draw-styles.ts (173 lines)
+    - TASK_4.6_COMPLETE.md (520+ lines completion summary)
+  - **Features Implemented:**
+    - MapLibre Draw plugin integration with custom styles
+    - Drawing toolbar (Draw, Select, Edit Vertices, Delete, Cancel modes)
+    - Zone properties panel (name, category, surface, color, notes, area/perimeter)
+    - Client-side polygon validation with Turf.js (structure, self-intersection, WGS84, winding)
+    - Area/perimeter calculations (metric + imperial units)
+    - 16 zone type categories with color coding
+    - Full CRUD workflow: draw → validate → save → edit → delete
+    - React Query mutations with optimistic updates
+    - Version token handling for concurrent edits
+  - **Dependencies Installed:**
+    - @mapbox/mapbox-gl-draw (polygon creation and editing)
+    - @types/mapbox__mapbox-gl-draw (TypeScript types)
+  - **Validation:**
+    - Client-side: Turf.js validation (mirrors backend logic)
+    - Server-side: PostGIS validation (already in TASK 3)
+    - Error handling: User-friendly toast messages
+  - **Total LOC:** 1,306 lines (Components 890, Utils 416)
+  - **Git Commit:** `dd50289`: feat(editor): implement TASK 4.6 - polygon drawing tools with MapLibre Draw
+  - **Next Steps:** Create layout editor page, site management pages
+
 **In Progress:**
-- [ ] 🚧 **4.3: Polygon Drawing Tools**
-  - Install @mapbox/mapbox-gl-draw (MapLibre compatible)
-  - Add drawing toolbar with polygon/edit/delete modes
-  - Integrate Turf.js validation (ring closure, self-intersection)
-  - Handle polygon creation → open properties panel
-  - Implement edit mode for existing zones
-  - Test end-to-end drawing workflow
+- [ ] 🚧 **4.7: Layout Editor Page**
+  - Create `/layouts/[id]/editor` page
+  - Import MapCanvasWithDraw component
+  - Fetch zones with useZones hook
+  - Zone detail panel on click
+  - Layout info header with breadcrumbs
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
