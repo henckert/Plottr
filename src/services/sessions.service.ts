@@ -52,6 +52,14 @@ export class SessionsService {
   }
 
   async create(payload: any) {
+    // Check for overlapping sessions if pitch is specified
+    if (payload.pitch_id && payload.start_ts && payload.end_ts) {
+      await this.checkSessionOverlap(
+        payload.pitch_id,
+        payload.start_ts,
+        payload.end_ts
+      );
+    }
     return this.repo.create(payload);
   }
 
@@ -63,8 +71,64 @@ export class SessionsService {
     if (!tokenMatches) {
       throw new AppError('Resource version mismatch (stale version_token)', 409, 'CONFLICT');
     }
+    
+    // Check for overlapping sessions if pitch or time is being updated
+    const pitchId = payload.pitch_id !== undefined ? payload.pitch_id : current.pitch_id;
+    const startTs = payload.start_ts !== undefined ? payload.start_ts : current.start_ts;
+    const endTs = payload.end_ts !== undefined ? payload.end_ts : current.end_ts;
+    
+    if (pitchId && startTs && endTs) {
+      await this.checkSessionOverlap(pitchId, startTs, endTs, id);
+    }
+    
     const updated = await this.repo.update(id, payload);
     if (!updated) throw new AppError('Session not found after update', 404, 'NOT_FOUND');
     return updated;
+  }
+
+  /**
+   * Check if a session overlaps with existing sessions on the same pitch
+   * Throws AppError with code SESSION_CONFLICT if overlap detected
+   * 
+   * @param pitchId - Pitch ID to check
+   * @param startTs - Session start time
+   * @param endTs - Session end time
+   * @param excludeSessionId - Session ID to exclude from check (for updates)
+   */
+  private async checkSessionOverlap(
+    pitchId: number | null,
+    startTs: string | Date,
+    endTs: string | Date,
+    excludeSessionId?: number
+  ) {
+    const overlapping = await this.repo.findOverlappingSessions(
+      pitchId,
+      startTs,
+      endTs,
+      excludeSessionId
+    );
+
+    if (overlapping.length > 0) {
+      // Format the conflict message with the overlapping session details
+      const conflictSession = overlapping[0];
+      const conflictStart = new Date(conflictSession.start_ts).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      const conflictEnd = new Date(conflictSession.end_ts).toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      throw new AppError(
+        `This pitch already has a session overlapping ${conflictStart} – ${conflictEnd}.`,
+        409,
+        'SESSION_CONFLICT'
+      );
+    }
   }
 }

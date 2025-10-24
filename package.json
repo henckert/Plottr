@@ -62,6 +62,7 @@
     "multer": "^2.0.2",
     "objection": "^3.0.0",
     "openai": "^4.10.0",
+    "osmtogeojson": "^3.0.0-beta.5",
     "pg": "^8.0.0",
     "swagger-ui-express": "^5.0.1",
     "tsconfig-paths": "^4.2.0",
