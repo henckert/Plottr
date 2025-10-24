@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 24, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (5/16-22) ✅  
-**Project Completion:** 36/88 subtasks (41%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (6/16-22) ✅  
+**Project Completion:** 37/88 subtasks (42%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 5/16-22 (28%) | 5-7 days | ~1.5 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 6/16-22 (33%) | 5-7 days | ~3 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **38% Complete** | **36/68-94** | **19-26 days** | **~8.5 days** |
+| **TOTAL** | **39% Complete** | **37/68-94** | **19-26 days** | **~10 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -414,14 +414,43 @@
     - `5b4fc32`: docs: update TASK 4.5 completion with edit page and overlap detection
   - **Next Steps:** Polygon drawing tools, zone management UI
 
+- [x] ✅ **4.6: Polygon Drawing Tools**
+  - **Status:** Complete - Interactive zone drawing with MapLibre Draw
+  - **Files Created:**
+    - web/src/components/editor/DrawToolbar.tsx (125 lines)
+    - web/src/components/editor/ZonePropertiesPanel.tsx (324 lines)
+    - web/src/components/editor/MapCanvasWithDraw.tsx (441 lines)
+    - web/src/lib/geospatial-client.ts (243 lines)
+    - web/src/lib/maplibre-draw-styles.ts (173 lines)
+    - TASK_4.6_COMPLETE.md (520+ lines completion summary)
+  - **Features Implemented:**
+    - MapLibre Draw plugin integration with custom styles
+    - Drawing toolbar (Draw, Select, Edit Vertices, Delete, Cancel modes)
+    - Zone properties panel (name, category, surface, color, notes, area/perimeter)
+    - Client-side polygon validation with Turf.js (structure, self-intersection, WGS84, winding)
+    - Area/perimeter calculations (metric + imperial units)
+    - 16 zone type categories with color coding
+    - Full CRUD workflow: draw → validate → save → edit → delete
+    - React Query mutations with optimistic updates
+    - Version token handling for concurrent edits
+  - **Dependencies Installed:**
+    - @mapbox/mapbox-gl-draw (polygon creation and editing)
+    - @types/mapbox__mapbox-gl-draw (TypeScript types)
+  - **Validation:**
+    - Client-side: Turf.js validation (mirrors backend logic)
+    - Server-side: PostGIS validation (already in TASK 3)
+    - Error handling: User-friendly toast messages
+  - **Total LOC:** 1,306 lines (Components 890, Utils 416)
+  - **Git Commit:** `dd50289`: feat(editor): implement TASK 4.6 - polygon drawing tools with MapLibre Draw
+  - **Next Steps:** Create layout editor page, site management pages
+
 **In Progress:**
-- [ ] 🚧 **4.6: Polygon Drawing Tools**
-  - Install @mapbox/mapbox-gl-draw (MapLibre compatible)
-  - Add drawing toolbar with polygon/edit/delete modes
-  - Integrate Turf.js validation (ring closure, self-intersection)
-  - Handle polygon creation → open properties panel
-  - Implement edit mode for existing zones
-  - Test end-to-end drawing workflow
+- [ ] 🚧 **4.7: Layout Editor Page**
+  - Create `/layouts/[id]/editor` page
+  - Import MapCanvasWithDraw component
+  - Fetch zones with useZones hook
+  - Zone detail panel on click
+  - Layout info header with breadcrumbs
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
