@@ -2,9 +2,9 @@
 
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
-**Last Updated:** October 24, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (7/16-22) ✅  
-**Project Completion:** 38/88 subtasks (43%)
+**Last Updated:** October 26, 2025  
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (8/16-22) ✅  
+**Project Completion:** 39/88 subtasks (44%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 7/16-22 (38%) | 5-7 days | ~3 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 8/16-22 (44%) | 5-7 days | ~3.5 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **40% Complete** | **38/68-94** | **19-26 days** | **~10 days** |
+| **TOTAL** | **41% Complete** | **39/68-94** | **19-26 days** | **~10.5 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -481,11 +481,59 @@
   - **Git Commit:** `203390c`: feat(editor): TASK 4.7 layout editor page
   - **Next Steps:** Site management pages (sites list, create site), asset placement tools
 
+- [x] ✅ **4.8: Sites Management Pages**
+  - **Status:** Complete - Full sites CRUD with geocoding
+  - **Files Created:**
+    - web/src/hooks/useSites.ts (207 lines)
+    - web/src/app/sites/page.tsx (224 lines)
+    - web/src/app/sites/new/page.tsx (343 lines)
+    - web/src/app/sites/[id]/page.tsx (295 lines)
+    - web/src/app/sites/[id]/edit/page.tsx (430 lines)
+    - TASK_4.8_PLANNING.md (584 lines planning document)
+  - **Features Implemented:**
+    - Sites list page with cursor-based pagination and client-side search
+    - Create site form with Mapbox geocoding (POST /api/geocoding/forward)
+    - MapLibre map with draggable marker for manual location adjustment
+    - Site detail page with map showing location + bbox polygon
+    - Layouts list with links to layout editor
+    - Edit site form with prefilled data and version token handling
+    - Delete site with confirmation modal
+  - **Sites List Page:**
+    - Responsive table with Name, Location, Coordinates, Actions columns
+    - Search by name, address, or city (client-side filtering)
+    - Pagination with "First Page" and "Next Page" buttons
+    - Empty state with "Create your first site" call-to-action
+  - **Create Site Form:**
+    - Name (required), Address (optional with geocoding button)
+    - City, State, Country, Postal Code fields
+    - MapLibre map with draggable marker (default: San Francisco)
+    - Geocoding: onBlur or manual button click → updates map + location fields
+    - Auto-parse place name to fill city/state/country
+  - **Site Detail Page:**
+    - Site header with name, address, Edit/Delete buttons
+    - MapLibre map showing site location marker + bbox polygon (if defined)
+    - Layouts list in grid layout (name, description, last updated, zone count)
+    - "Create Layout" button → /sites/[id]/layouts/new (TASK 4.9)
+  - **Edit Site Form:**
+    - Same as create form but prefilled with existing data
+    - Version token handling with If-Match header
+    - Delete button with confirmation modal
+    - 409 conflict handling for concurrent edits
+  - **React Query Hooks:**
+    - useSites() - Paginated list with filters
+    - useSite(id) - Single site fetch
+    - useCreateSite() - POST mutation
+    - useUpdateSite() - PUT mutation with version token
+    - useDeleteSite() - DELETE mutation
+    - useGeocode() - Address geocoding mutation
+  - **Total LOC:** 1,499 lines (Hooks 207, List 224, Create 343, Detail 295, Edit 430)
+  - **Git Commit:** `736443a`: feat(sites): TASK 4.8 sites management pages complete
+  - **Next Steps:** Create layout form, asset placement tools
+
 **In Progress:**
-- [ ] 🚧 **4.8: Sites List View & Create Site**
-  - Create `/sites` page with pagination
-  - Create `/sites/new` form with address geocoding
-  - Manual boundary drawing for site bbox
+- [ ] 🚧 **4.9: Create Layout Page**
+  - Create `/sites/[id]/layouts/new` form
+  - Link layouts to parent site
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
