@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 26, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (10/16-22) ✅  
-**Project Completion:** 41/88 subtasks (47%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (11/16-22) ✅  
+**Project Completion:** 42/88 subtasks (48%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 10/16-22 (56%) | 5-7 days | ~4 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 11/16-22 (61%) | 5-7 days | ~4.5 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **47% Complete** | **41/68-94** | **19-26 days** | **~11 days** |
+| **TOTAL** | **48% Complete** | **42/68-94** | **19-26 days** | **~11.5 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -597,11 +597,59 @@
   - **Git Commit:** `db45e63`: feat(layouts): TASK 4.10 edit layout page
   - **Next Steps:** Asset placement tools, layout duplication, layouts list page
 
-**In Progress:**
-- [ ] 🚧 **4.11: Layouts List Page** 📌 NEXT
-  - **Status:** Planned - Centralized layouts view with filtering
+- [x] ✅ **4.11: Layouts List Page**
+  - **Status:** Complete - Centralized layouts view with filtering and pagination
+  - **Files Created:**
+    - web/src/app/layouts/page.tsx (252 lines)
+    - TASK_4.11_PLANNING.md (planning document)
   - **Route:** `/layouts`
-  - **Estimated LOC:** ~200 lines (list + pagination + filters)
+  - **Features Implemented:**
+    - Paginated grid layout displaying all layouts (3 columns on desktop, responsive)
+    - Filter by site (dropdown with "All Sites" + individual sites)
+    - Filter by status (tabs: All/Draft/Published)
+    - Search by name (client-side filtering with live results)
+    - Cursor-based pagination (50 layouts per page, First/Next buttons)
+    - Layout cards show: name, site name, status badge, last updated
+    - Edit and Editor action buttons on each card
+    - Empty state with "Create your first layout" CTA
+    - Results counter (e.g., "Showing 12 of 45 layouts")
+    - Loading skeleton during initial fetch
+    - "No layouts match your filters" state
+  - **Filter Bar:**
+    - Site dropdown with all sites from useSites hook
+    - Status tabs (All/Draft/Published) with active highlighting
+    - Search input with magnifying glass icon
+    - Responsive layout (stacks vertically on mobile)
+  - **Layout Cards:**
+    - Name (truncated if too long)
+    - Site name with MapPin icon
+    - Description (line-clamp-2 for long text)
+    - Status badge (green for Published, gray for Draft)
+    - Last updated with custom formatTimeAgo helper
+    - Edit button → /layouts/[id]/edit
+    - Editor button → /layouts/[id]/editor
+    - Hover shadow for interactivity
+  - **Client-Side Filtering:**
+    - useMemo for performance optimization
+    - Filters apply in order: site → status → search
+    - Search is case-insensitive substring match
+    - Results count updates live
+  - **Pagination:**
+    - First Page button (disabled if on page 1)
+    - Next Page button (disabled if has_more = false)
+    - Cursor managed via useState
+  - **Time Formatting:**
+    - Custom formatTimeAgo helper (no date-fns dependency)
+    - Handles: "just now", "X minutes ago", "X hours ago", "X days ago", etc.
+  - **Total LOC:** 252 lines
+  - **Git Commit:** `4e1b625`: feat(layouts): TASK 4.11 layouts list page
+  - **Next Steps:** Layout detail page, asset placement tools, layout duplication
+
+**In Progress:**
+- [ ] 🚧 **4.12: Layout Detail Page** 📌 NEXT
+  - **Status:** Planned - Layout overview with zones and metadata
+  - **Route:** `/layouts/[id]`
+  - **Estimated LOC:** ~200 lines (detail view + zones list)
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
