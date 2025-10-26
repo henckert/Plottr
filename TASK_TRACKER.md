@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 26, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (8/16-22) ✅  
-**Project Completion:** 39/88 subtasks (44%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (9/16-22) ✅  
+**Project Completion:** 40/88 subtasks (45%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 8/16-22 (44%) | 5-7 days | ~3.5 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 9/16-22 (50%) | 5-7 days | ~3.5 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **41% Complete** | **39/68-94** | **19-26 days** | **~10.5 days** |
+| **TOTAL** | **45% Complete** | **40/68-94** | **19-26 days** | **~10.5 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -530,10 +530,39 @@
   - **Git Commit:** `736443a`: feat(sites): TASK 4.8 sites management pages complete
   - **Next Steps:** Create layout form, asset placement tools
 
+- [x] ✅ **4.9: Create Layout Page**
+  - **Status:** Complete - Layout creation form from site detail page
+  - **Files Created:**
+    - web/src/app/sites/[siteId]/layouts/new/page.tsx (218 lines)
+    - TASK_4.9_PLANNING.md (planning document)
+  - **Route:** `/sites/[siteId]/layouts/new`
+  - **Features Implemented:**
+    - Layout creation form with name (required), description (optional, 1000 char max)
+    - Visibility radio buttons (Draft/Published) using is_published boolean
+    - Character counter for description field with live updates
+    - Breadcrumbs: Home > Sites > [Site Name] > New Layout
+    - Success redirects to /layouts/[id]/editor for immediate editing
+    - Loading states and validation feedback
+  - **Schema Fix:**
+    - Changed from status: 'draft' | 'published' to is_published: boolean
+    - Matches backend LayoutCreateSchema correctly
+  - **Form Fields:**
+    - Name: Text input (required, trimmed)
+    - Description: Textarea (optional, 1000 char max, trimmed)
+    - Visibility: Radio buttons (Draft = false, Published = true)
+  - **Validation:**
+    - Required name field (disabled submit if empty)
+    - Max 1000 characters for description
+    - Character counter shows remaining/exceeded characters
+  - **Total LOC:** 218 lines
+  - **Git Commit:** `4ccb589`: feat(layouts): TASK 4.9 create layout page
+  - **Next Steps:** Edit layout form, asset placement tools
+
 **In Progress:**
-- [ ] 🚧 **4.9: Create Layout Page**
-  - Create `/sites/[id]/layouts/new` form
-  - Link layouts to parent site
+- [ ] 🚧 **4.10: Edit Layout Page** 📌 NEXT
+  - **Status:** Planned - Metadata editing for existing layouts
+  - **Route:** `/layouts/[id]/edit`
+  - **Estimated LOC:** ~250 lines (form + breadcrumbs + delete)
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
