@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 26, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (9/16-22) ✅  
-**Project Completion:** 40/88 subtasks (45%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (10/16-22) ✅  
+**Project Completion:** 41/88 subtasks (47%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 9/16-22 (50%) | 5-7 days | ~3.5 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 10/16-22 (56%) | 5-7 days | ~4 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **45% Complete** | **40/68-94** | **19-26 days** | **~10.5 days** |
+| **TOTAL** | **47% Complete** | **41/68-94** | **19-26 days** | **~11 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -558,11 +558,50 @@
   - **Git Commit:** `4ccb589`: feat(layouts): TASK 4.9 create layout page
   - **Next Steps:** Edit layout form, asset placement tools
 
-**In Progress:**
-- [ ] 🚧 **4.10: Edit Layout Page** 📌 NEXT
-  - **Status:** Planned - Metadata editing for existing layouts
+- [x] ✅ **4.10: Edit Layout Page**
+  - **Status:** Complete - Layout metadata editing with version control
+  - **Files Created:**
+    - web/src/app/layouts/[id]/edit/page.tsx (279 lines)
+    - TASK_4.10_PLANNING.md (planning document)
   - **Route:** `/layouts/[id]/edit`
-  - **Estimated LOC:** ~250 lines (form + breadcrumbs + delete)
+  - **Features Implemented:**
+    - Edit layout form prefilled with existing data (name, description, is_published)
+    - Character counter for description (1000 max with red warning on overflow)
+    - Visibility radio buttons (Draft/Published)
+    - Version token handling with If-Match header for optimistic concurrency
+    - 409 conflict detection with user-friendly error message
+    - Delete layout button with confirmation modal
+    - Breadcrumbs: Home > Layouts > [Layout Name] > Edit
+    - Success redirects to layout detail page
+    - Cancel button returns to layout detail
+  - **Form Prefill:**
+    - Fetches layout via useLayout(id) hook
+    - useEffect populates form state when layout loads
+    - Loading spinner during fetch
+    - 404 error state if layout not found
+  - **Version Token Flow:**
+    - Extract version_token from fetched layout
+    - Include in If-Match header for PUT request
+    - 409 response triggers "modified by another user" error
+    - Prompts user to refresh and try again
+  - **Delete Confirmation:**
+    - Modal with warning about irreversible action
+    - Lists what will be deleted (layout, zones, metadata)
+    - Delete Forever button (red, disabled during mutation)
+    - Redirects to parent site (/sites/[siteId]) or /layouts
+  - **Validation:**
+    - Required name field (disabled submit if empty)
+    - Max 1000 characters for description
+    - Character counter shows remaining/exceeded with color coding
+  - **Total LOC:** 279 lines
+  - **Git Commit:** `db45e63`: feat(layouts): TASK 4.10 edit layout page
+  - **Next Steps:** Asset placement tools, layout duplication, layouts list page
+
+**In Progress:**
+- [ ] 🚧 **4.11: Layouts List Page** 📌 NEXT
+  - **Status:** Planned - Centralized layouts view with filtering
+  - **Route:** `/layouts`
+  - **Estimated LOC:** ~200 lines (list + pagination + filters)
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
