@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 24, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (6/16-22) ✅  
-**Project Completion:** 37/88 subtasks (42%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (7/16-22) ✅  
+**Project Completion:** 38/88 subtasks (43%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 6/16-22 (33%) | 5-7 days | ~3 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 7/16-22 (38%) | 5-7 days | ~3 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **39% Complete** | **37/68-94** | **19-26 days** | **~10 days** |
+| **TOTAL** | **40% Complete** | **38/68-94** | **19-26 days** | **~10 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -444,13 +444,48 @@
   - **Git Commit:** `dd50289`: feat(editor): implement TASK 4.6 - polygon drawing tools with MapLibre Draw
   - **Next Steps:** Create layout editor page, site management pages
 
+- [x] ✅ **4.7: Layout Editor Page**
+  - **Status:** Complete - Full-screen editor with zone management
+  - **Files Created:**
+    - web/src/app/layouts/[id]/editor/page.tsx (177 lines)
+    - web/src/components/editor/LayoutHeader.tsx (197 lines)
+    - web/src/components/editor/ZoneDetailPanel.tsx (233 lines)
+    - TASK_4.7_PLANNING.md (508 lines planning document)
+  - **Features Implemented:**
+    - Full-screen layout editor page at `/layouts/[id]/editor`
+    - LayoutHeader with breadcrumbs, zone count badge, save status indicator
+    - ZoneDetailPanel for read-only zone information (name, category, area, perimeter, metadata)
+    - Keyboard shortcuts (ESC to cancel, Delete key to remove zone)
+    - Zone click handling → detail panel → edit mode flow
+    - Loading and error states with spinner and error messages
+    - Integration with MapCanvasWithDraw from TASK 4.6
+    - Version token handling for concurrent edits
+  - **UI Components:**
+    - Breadcrumbs navigation: Home > Sites > Site Name > Layouts > Layout Name > Editor
+    - Zone count badge with warning for >150 zones (per PRD Q-2)
+    - Save status indicator (✓ All changes saved, ⋯ Saving..., ⚠ Failed to save)
+    - Zone detail panel with Edit/Delete/Duplicate/Export buttons
+    - Time-relative timestamps ("2 hours ago", "just now")
+  - **Data Fetching:**
+    - useLayout hook to fetch layout details
+    - useZones hook with layoutId filter (limit 100)
+    - useDeleteZone mutation with confirmation
+  - **Keyboard Shortcuts:**
+    - ESC: Cancel/deselect zone
+    - Delete/Backspace: Delete selected zone (with confirmation, only if not editing input)
+  - **Responsive Design:**
+    - Full-height layout with flex-col
+    - Collapsible header on scroll (future enhancement)
+    - Mobile-friendly zone detail panel (absolute positioned)
+  - **Total LOC:** 607 lines (Page 177, LayoutHeader 197, ZoneDetailPanel 233)
+  - **Git Commit:** `203390c`: feat(editor): TASK 4.7 layout editor page
+  - **Next Steps:** Site management pages (sites list, create site), asset placement tools
+
 **In Progress:**
-- [ ] 🚧 **4.7: Layout Editor Page**
-  - Create `/layouts/[id]/editor` page
-  - Import MapCanvasWithDraw component
-  - Fetch zones with useZones hook
-  - Zone detail panel on click
-  - Layout info header with breadcrumbs
+- [ ] 🚧 **4.8: Sites List View & Create Site**
+  - Create `/sites` page with pagination
+  - Create `/sites/new` form with address geocoding
+  - Manual boundary drawing for site bbox
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
