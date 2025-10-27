@@ -3,8 +3,8 @@
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
 **Last Updated:** October 27, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (13/16-22) ✅  
-**Project Completion:** 44/88 subtasks (50%)
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (18/16-22) ✅  
+**Project Completion:** 49/88 subtasks (56%)
 
 ---
 
@@ -309,6 +309,49 @@
 ### Planned Subtasks (16-22 estimated)
 
 **Completed:**
+- [x] ✅ **4.1-4.5: MapLibre Drawing Tools Infrastructure** 
+  - **Status:** Complete - Core map components ready for layout editor
+  - **Files Created:**
+    - TASK_4.1-4.5_PLANNING.md (1,500+ lines comprehensive spec)
+    - web/src/components/map/Map.tsx (enhanced with satellite basemap)
+    - web/src/components/map/DrawingToolbar.tsx (313 lines - polygon/point/line drawing)
+    - web/src/components/map/GridOverlay.tsx (260 lines - snap-to-grid utilities)
+    - web/src/components/map/MeasurementsDisplay.tsx (217 lines - real-time calculations)
+    - web/src/components/map/index.ts (barrel exports)
+  - **Dependencies Installed:**
+    - maplibre-gl@^4.0.0 (satellite mapping)
+    - @mapbox/mapbox-gl-draw@^1.4.3 (drawing tools)
+    - @turf/area, @turf/length, @turf/distance, @turf/helpers, @turf/polygon-to-line (geospatial calculations)
+    - @types/mapbox__mapbox-gl-draw (TypeScript types)
+  - **Features Delivered:**
+    - TASK 4.1: Satellite basemap from MapTiler with controls (zoom, compass, pitch, scale)
+    - TASK 4.2: DrawingToolbar with 4 modes (polygon/point/line/select) and custom styling
+    - TASK 4.3: GridOverlay with dynamic grid generation and snap utilities
+    - TASK 4.4: Vertex editing (built into MapboxDraw direct_select mode)
+    - TASK 4.5: Real-time measurements (area, perimeter, length) with unit conversion
+  - **Total LOC:** ~790 lines of map component code
+
+- [x] ✅ **4.13: Assets API React Query Hooks & Placement Tools (85% complete)**
+  - **Status:** Backend complete, frontend hooks/components ready
+  - **Files Created:**
+    - TASK_4.13_PLANNING.md (comprehensive backend + frontend plan)
+    - TASK_4.13_COMPLETION_SUMMARY.md (delivery report)
+    - src/controllers/assets.controller.ts (156 lines)
+    - src/data/assets.repo.ts (210 lines)
+    - src/services/assets.service.ts (154 lines)
+    - src/schemas/assets.schema.ts (104 lines)
+    - src/routes/assets.routes.ts (24 lines + integration into index.ts)
+    - src/db/migrations/0015_enhance_assets_table.ts (geospatial constraints)
+    - tests/integration/assets.test.ts (503 lines, 22 tests)
+    - web/src/hooks/useAssets.ts (React Query hooks for asset CRUD)
+    - Enhanced src/lib/geospatial.ts (Point/LineString validation)
+  - **Features Delivered:**
+    - Backend: Full CRUD API for assets with geometry validation
+    - Frontend: React Query hooks (list, get, create, update, delete)
+    - Geospatial: Point/LineString validation (assets cannot be polygons)
+    - Version control: Optimistic concurrency via version_token
+  - **Total LOC:** ~1,155 lines backend + hooks
+
 - [x] ✅ **4.1: Layout Editor Setup & Dependencies**
   - **Status:** Complete - Infrastructure ready for development
   - **Files Created:** 
