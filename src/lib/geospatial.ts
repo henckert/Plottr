@@ -14,7 +14,7 @@ export interface GeoPolygon {
 }
 
 export interface GeometryError {
-  code: 'INVALID_POLYGON' | 'SELF_INTERSECTING' | 'INVALID_WINDING' | 'INVALID_SRID' | 'OUT_OF_BOUNDS' | 'INSUFFICIENT_POINTS';
+  code: 'INVALID_POLYGON' | 'SELF_INTERSECTING' | 'INVALID_WINDING' | 'INVALID_SRID' | 'OUT_OF_BOUNDS' | 'INSUFFICIENT_POINTS' | 'INVALID_GEOMETRY' | 'INVALID_POINT' | 'INVALID_LINESTRING';
   message: string;
 }
 
@@ -221,6 +221,107 @@ export function validatePitchFitsInVenue(pitchGeometry: GeoPolygon, venueBbox: G
         code: 'OUT_OF_BOUNDS',
         message: `Pitch point (${lon}, ${lat}) is outside venue bounds [lon: ${minVenueLon}-${maxVenueLon}, lat: ${minVenueLat}-${maxVenueLat}]`,
       };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validates asset geometry (POINT or LINESTRING only)
+ * Assets cannot be polygons - they must be point features or linear features
+ */
+export function validateAssetGeometry(geometry: any): GeometryError | null {
+  if (!geometry) {
+    return { code: 'INVALID_GEOMETRY', message: 'Geometry is required for assets' };
+  }
+
+  if (!geometry.type) {
+    return { code: 'INVALID_GEOMETRY', message: 'Geometry must have a type property' };
+  }
+
+  // Assets can only be Point or LineString
+  if (geometry.type !== 'Point' && geometry.type !== 'LineString') {
+    return {
+      code: 'INVALID_GEOMETRY',
+      message: 'Asset geometry must be Point or LineString (polygons not allowed)',
+    };
+  }
+
+  // Validate Point geometry
+  if (geometry.type === 'Point') {
+    if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length !== 2) {
+      return {
+        code: 'INVALID_POINT',
+        message: 'Point coordinates must be [longitude, latitude]',
+      };
+    }
+
+    const [lon, lat] = geometry.coordinates;
+    if (typeof lon !== 'number' || typeof lat !== 'number') {
+      return {
+        code: 'INVALID_POINT',
+        message: 'Point coordinates must be numeric values',
+      };
+    }
+
+    // Validate WGS84 bounds
+    if (lon < -180 || lon > 180) {
+      return {
+        code: 'INVALID_SRID',
+        message: `Longitude ${lon} is outside WGS84 range [-180, 180]`,
+      };
+    }
+
+    if (lat < -90 || lat > 90) {
+      return {
+        code: 'INVALID_SRID',
+        message: `Latitude ${lat} is outside WGS84 range [-90, 90]`,
+      };
+    }
+  }
+
+  // Validate LineString geometry
+  if (geometry.type === 'LineString') {
+    if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length < 2) {
+      return {
+        code: 'INVALID_LINESTRING',
+        message: 'LineString must have at least 2 points',
+      };
+    }
+
+    // Validate each point in the line
+    for (let i = 0; i < geometry.coordinates.length; i++) {
+      const point = geometry.coordinates[i];
+      if (!Array.isArray(point) || point.length !== 2) {
+        return {
+          code: 'INVALID_LINESTRING',
+          message: `Point ${i} in LineString must be [longitude, latitude]`,
+        };
+      }
+
+      const [lon, lat] = point;
+      if (typeof lon !== 'number' || typeof lat !== 'number') {
+        return {
+          code: 'INVALID_LINESTRING',
+          message: `Point ${i} in LineString must have numeric coordinates`,
+        };
+      }
+
+      // Validate WGS84 bounds
+      if (lon < -180 || lon > 180) {
+        return {
+          code: 'INVALID_SRID',
+          message: `Point ${i}: longitude ${lon} is outside WGS84 range [-180, 180]`,
+        };
+      }
+
+      if (lat < -90 || lat > 90) {
+        return {
+          code: 'INVALID_SRID',
+          message: `Point ${i}: latitude ${lat} is outside WGS84 range [-90, 90]`,
+        };
+      }
     }
   }
 

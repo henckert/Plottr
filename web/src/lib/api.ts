@@ -128,6 +128,46 @@ export interface SessionUpdate {
   share_token?: string;
 }
 
+export type AssetType = 'goal' | 'bench' | 'light' | 'cone' | 'flag' | 'marker' | 'tree' | 'fence' | 'net' | 'scoreboard' | 'water_fountain' | 'trash_bin' | 'camera' | 'other';
+
+export type AssetIcon = 'fa-futbol' | 'fa-basketball' | 'fa-volleyball' | 'fa-baseball' | 'fa-flag' | 'fa-bullseye' | 'fa-chair' | 'fa-lightbulb' | 'fa-tree' | 'fa-cone-striped' | 'fa-water' | 'fa-dumpster' | 'fa-square-parking' | 'fa-restroom' | 'fa-kit-medical' | 'fa-camera' | 'fa-wifi' | 'fa-phone' | 'fa-door-open' | 'fa-fence';
+
+export interface Asset {
+  id: number;
+  layout_id: number;
+  zone_id?: number | null;
+  name: string;
+  asset_type: AssetType;
+  icon?: AssetIcon | null;
+  geometry?: any; // GeoJSON Point or LineString
+  rotation_deg?: number | null;
+  properties?: Record<string, any> | null;
+  version_token: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetCreate {
+  layout_id: number;
+  zone_id?: number | null;
+  name: string;
+  asset_type: AssetType;
+  icon?: AssetIcon | null;
+  geometry?: any;
+  rotation_deg?: number;
+  properties?: Record<string, any>;
+}
+
+export interface AssetUpdate {
+  zone_id?: number | null;
+  name?: string;
+  asset_type?: AssetType;
+  icon?: AssetIcon | null;
+  geometry?: any;
+  rotation_deg?: number;
+  properties?: Record<string, any>;
+}
+
 export interface GeoJSON {
   Point: {
     type: 'Point';
@@ -245,6 +285,39 @@ export const sessionApi = {
 
   delete: async (id: number | string, versionToken: string) => {
     const response = await apiClient.delete(`/sessions/${id}`, {
+      headers: { 'If-Match': versionToken },
+    });
+    return response.data;
+  },
+};
+
+export const assetApi = {
+  list: async (layoutId?: number, zoneId?: number, assetType?: AssetType, limit = 50, cursor?: string) => {
+    const response = await apiClient.get<PaginatedResponse<Asset>>('/assets', {
+      params: { layout_id: layoutId, zone_id: zoneId, asset_type: assetType, limit, cursor },
+    });
+    return response.data;
+  },
+
+  getById: async (id: number | string) => {
+    const response = await apiClient.get<{ data: Asset }>(`/assets/${id}`);
+    return response.data.data;
+  },
+
+  create: async (data: AssetCreate) => {
+    const response = await apiClient.post<{ data: Asset }>('/assets', data);
+    return response.data.data;
+  },
+
+  update: async (id: number | string, data: AssetUpdate, versionToken: string) => {
+    const response = await apiClient.put<{ data: Asset }>(`/assets/${id}`, data, {
+      headers: { 'If-Match': versionToken },
+    });
+    return response.data.data;
+  },
+
+  delete: async (id: number | string, versionToken: string) => {
+    const response = await apiClient.delete(`/assets/${id}`, {
       headers: { 'If-Match': versionToken },
     });
     return response.data;

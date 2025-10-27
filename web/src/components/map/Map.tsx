@@ -5,7 +5,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Map as MaplibreMap, Marker } from 'maplibre-gl';
 
-interface MapProps {
+export interface MapProps {
   center?: { lat: number; lon: number };
   zoom?: number;
   className?: string;
@@ -38,13 +38,42 @@ export const Map = React.forwardRef<MaplibreMap, MapProps>(
     useEffect(() => {
       if (!mapContainer.current || map.current) return;
 
+      // Get MapTiler API key for satellite basemap
+      const mapTilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+      const satelliteStyle = mapTilerKey
+        ? `https://api.maptiler.com/maps/satellite/style.json?key=${mapTilerKey}`
+        : 'https://demotiles.maplibre.org/style.json'; // Fallback
+
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style:
-          'https://demotiles.maplibre.org/style.json', // OSM-compatible style
+        style: satelliteStyle,
         center: [center.lon, center.lat],
         zoom: zoom,
+        attributionControl: false, // We'll add custom attribution
+        pitchWithRotate: true,
+        dragRotate: true,
       });
+
+      // Add navigation controls (zoom, compass, pitch)
+      const navControl = new maplibregl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+        visualizePitch: true,
+      });
+      map.current.addControl(navControl, 'top-right');
+
+      // Add scale control for measurements
+      const scaleControl = new maplibregl.ScaleControl({
+        maxWidth: 200,
+        unit: 'metric',
+      });
+      map.current.addControl(scaleControl, 'bottom-left');
+
+      // Add attribution
+      const attributionControl = new maplibregl.AttributionControl({
+        compact: true,
+      });
+      map.current.addControl(attributionControl, 'bottom-right');
 
       // Forward ref
       if (ref) {
