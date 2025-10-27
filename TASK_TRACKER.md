@@ -2,9 +2,9 @@
 
 **Project:** Field Layout Designer & Sharing Platform  
 **Created:** October 20, 2025  
-**Last Updated:** October 26, 2025  
-**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (11/16-22) ✅  
-**Project Completion:** 42/88 subtasks (48%)
+**Last Updated:** October 27, 2025  
+**Overall Status:** TASK 1 Complete (10/10) | TASK 2 Complete (14/14) | TASK 3 Complete (7/7) | TASK 4 In Progress (12/16-22) ✅  
+**Project Completion:** 43/88 subtasks (49%)
 
 ---
 
@@ -24,10 +24,10 @@
 | **TASK 1: Database Schema** | ✅ COMPLETE | 10/10 (100%) | 2-3 days | ~2-3 days |
 | **TASK 2: Sites & Layouts API** | ✅ COMPLETE | 14/14 (100%) | 3-4 days | ~3-4 days |
 | **TASK 3: Zones & Assets API** | ✅ COMPLETE | 7/7 (100%) | 4-5 days | ~1.5 days |
-| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 11/16-22 (61%) | 5-7 days | ~4.5 days |
+| **TASK 4: Layout Editor Frontend** | 🚧 IN PROGRESS | 12/16-22 (67%) | 5-7 days | ~4.5 days |
 | **TASK 5: Share Links & Export** | ⏳ PENDING | 0/10-14 | 3-4 days | - |
 | **TASK 6: Documentation & Deployment** | ⏳ PENDING | 0/8-12 | 2-3 days | - |
-| **TOTAL** | **48% Complete** | **42/68-94** | **19-26 days** | **~11.5 days** |
+| **TOTAL** | **49% Complete** | **43/68-94** | **19-26 days** | **~11.5 days** |
 
 **Legend:**
 - ✅ COMPLETE - All subtasks finished and tested
@@ -645,11 +645,24 @@
   - **Git Commit:** `4e1b625`: feat(layouts): TASK 4.11 layouts list page
   - **Next Steps:** Layout detail page, asset placement tools, layout duplication
 
-**In Progress:**
-- [ ] 🚧 **4.12: Layout Detail Page** 📌 NEXT
-  - **Status:** Planned - Layout overview with zones and metadata
+**Completed:**
+- [x] ✅ **4.12: Layout Detail Page**
+  - **Status:** COMPLETE - Layout overview with zones and metadata
   - **Route:** `/layouts/[id]`
-  - **Estimated LOC:** ~200 lines (detail view + zones list)
+  - **Implementation:** TASK_4.12_PLANNING.md, web/src/app/layouts/[id]/page.tsx (275 lines)
+  - **Features:**
+    - Layout metadata display (name, description, site, status, timestamps)
+    - Zones grid showing name, zone_type, and area
+    - Action buttons: Edit, Delete, Open Editor
+    - Delete confirmation modal with cascade warning
+    - Breadcrumb navigation
+    - Empty state for layouts without zones
+  - **Git Commit:** `9517e08`: feat(layouts): TASK 4.12 layout detail page
+  - **Completion Date:** October 27, 2025
+
+**In Progress:**
+- [ ] 🚧 **4.13: Asset Placement Tools** 📌 NEXT (TBD)
+  - **Status:** Planned - Place/edit assets within zones
 
 #### Map & Drawing Tools (~5 subtasks)
 - [ ] **4.1: MapLibre Setup**
