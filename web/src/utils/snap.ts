@@ -5,10 +5,10 @@
  * Snap a point to grid based on meter spacing
  * @param lng Longitude
  * @param lat Latitude
- * @param meters Grid spacing in meters
+ * @param _meters Grid spacing in meters (not yet implemented)
  * @returns Snapped coordinates
  */
-export function snapToGrid(lng: number, lat: number, meters: number) {
+export function snapToGrid(lng: number, lat: number, _meters: number) {
   // TODO: Convert meters to degrees at current latitude
   // TODO: Round coordinates to grid
   return { lng, lat }; // stub
@@ -18,15 +18,15 @@ export function snapToGrid(lng: number, lat: number, meters: number) {
  * Snap a point to nearest feature vertex or edge
  * @param lng Longitude
  * @param lat Latitude
- * @param features GeoJSON features to snap to
- * @param threshold Maximum snap distance in meters
+ * @param _features GeoJSON features to snap to (not yet implemented)
+ * @param _threshold Maximum snap distance in meters (not yet implemented)
  * @returns Snapped coordinates or original if no snap target found
  */
 export function snapToFeatures(
   lng: number,
   lat: number,
-  features: any[],
-  threshold: number = 5
+  _features: any[],
+  _threshold: number = 5
 ) {
   // TODO: Use @turf/nearest-point-on-line and @turf/distance
   // TODO: Find closest point on any feature within threshold

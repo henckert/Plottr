@@ -30,7 +30,7 @@ export default function LayoutEditorPage() {
   const layoutId = Number(params.id);
 
   // Editor store
-  const { openQuickStart, snapEnabled, activeTool } = useEditorStore();
+  const { openQuickStart, snapEnabled } = useEditorStore();
 
   // State
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
