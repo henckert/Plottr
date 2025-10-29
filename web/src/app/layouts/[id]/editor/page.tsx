@@ -14,11 +14,23 @@ import { useZones, useDeleteZone } from '@/hooks/useZones';
 import { MapCanvasWithDraw } from '@/components/editor/MapCanvasWithDraw';
 import { LayoutHeader } from '@/components/editor/LayoutHeader';
 import { ZoneDetailPanel } from '@/components/editor/ZoneDetailPanel';
+import { QuickStartWizard } from '@/components/editor/QuickStartWizard';
+import { Toolbar } from '@/components/editor/Toolbar';
+import { BottomStatus } from '@/components/editor/BottomStatus';
+import { LeftRail } from '@/components/editor/LeftRail';
+import { CommandPalette } from '@/components/editor/CommandPalette';
+import { RuralModePanel } from '@/components/editor/RuralModePanel';
+import { EmptyState } from '@/components/editor/EmptyState';
+import { GridOverlay } from '@/components/editor/GridOverlay';
+import { useEditorStore } from '@/store/editor.store';
 
 export default function LayoutEditorPage() {
   const params = useParams();
   const router = useRouter();
   const layoutId = Number(params.id);
+
+  // Editor store
+  const { openQuickStart, snapEnabled, activeTool } = useEditorStore();
 
   // State
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
@@ -37,6 +49,27 @@ export default function LayoutEditorPage() {
 
   const zones = zonesResponse?.data || [];
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
+
+  // Handlers for QuickStart and EmptyState
+  const handleQuickStartComplete = useCallback(() => {
+    // TODO: Handle template/rectangle/trace creation
+    useEditorStore.getState().setOpenQuickStart(false);
+  }, []);
+
+  const handleTemplate = useCallback(() => {
+    // TODO: Open template gallery
+    console.log('Open template gallery');
+  }, []);
+
+  const handleRectangle = useCallback(() => {
+    // TODO: Start rectangle drawing mode
+    useEditorStore.getState().setTool('draw');
+  }, []);
+
+  const handleTrace = useCallback(() => {
+    // TODO: Enable rural mode for tracing
+    useEditorStore.getState().setRuralMode(true);
+  }, []);
 
   // Handlers
   const handleZoneClick = useCallback((zoneId: number) => {
@@ -146,6 +179,12 @@ export default function LayoutEditorPage() {
 
   return (
     <div className="flex flex-col h-screen">
+      {/* QuickStart Wizard (shows on first load or when openQuickStart is true) */}
+      {openQuickStart && <QuickStartWizard onComplete={handleQuickStartComplete} />}
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette />
+
       {/* Header */}
       <LayoutHeader
         layout={layout}
@@ -154,32 +193,63 @@ export default function LayoutEditorPage() {
         onBack={() => router.push(`/layouts/${layoutId}`)}
       />
 
-      {/* Map Canvas */}
-      <div className="flex-1 relative">
-        <MapCanvasWithDraw
-          layoutId={layoutId}
-          zones={zones}
-          selectedZoneId={selectedZoneId}
-          onZoneClick={handleZoneClick}
-          isLoading={zonesLoading}
-          center={
-            site?.location?.coordinates
-              ? [site.location.coordinates[0], site.location.coordinates[1]]
-              : undefined
-          }
-          zoom={site?.location ? 16 : 15}
-        />
+      {/* Main Editor Layout */}
+      <div className="flex-1 flex relative overflow-hidden">
+        {/* Left Rail (Templates/Shapes/Layers/Props) */}
+        <LeftRail />
 
-        {/* Zone Detail Panel (when zone selected and not editing) */}
-        {selectedZone && !isEditMode && (
-          <ZoneDetailPanel
-            zone={selectedZone}
-            onEdit={handleEditZone}
-            onDelete={handleDeleteZone}
-            onClose={handleClosePanel}
+        {/* Map Canvas Container */}
+        <div className="flex-1 relative">
+          {/* Empty State (when no zones exist) */}
+          {zones.length === 0 && (
+            <EmptyState
+              onTemplate={handleTemplate}
+              onRectangle={handleRectangle}
+              onTrace={handleTrace}
+            />
+          )}
+
+          <MapCanvasWithDraw
+            layoutId={layoutId}
+            zones={zones}
+            selectedZoneId={selectedZoneId}
+            onZoneClick={handleZoneClick}
+            isLoading={zonesLoading}
+            center={
+              site?.location?.coordinates
+                ? [site.location.coordinates[0], site.location.coordinates[1]]
+                : undefined
+            }
+            zoom={site?.location ? 16 : 15}
           />
-        )}
+
+          {/* Grid Overlay (when snap enabled) */}
+          {snapEnabled && <GridOverlay />}
+
+          {/* Toolbar (top-right floating) */}
+          <div className="absolute top-4 right-4 z-10">
+            <Toolbar />
+          </div>
+
+          {/* Rural Mode Panel (bottom-right floating) */}
+          <div className="absolute bottom-20 right-4 z-10">
+            <RuralModePanel />
+          </div>
+
+          {/* Zone Detail Panel (when zone selected and not editing) */}
+          {selectedZone && !isEditMode && (
+            <ZoneDetailPanel
+              zone={selectedZone}
+              onEdit={handleEditZone}
+              onDelete={handleDeleteZone}
+              onClose={handleClosePanel}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Bottom Status Bar */}
+      <BottomStatus />
     </div>
   );
 }
