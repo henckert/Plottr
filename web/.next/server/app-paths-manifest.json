@@ -1,7 +1,3 @@
 {
-  "/layouts/[id]/editor/page": "app/layouts/[id]/editor/page.js",
-  "/layouts/page": "app/layouts/page.js",
-  "/sites/new/page": "app/sites/new/page.js",
-  "/layouts/[id]/page": "app/layouts/[id]/page.js",
-  "/sites/page": "app/sites/page.js"
+  "/layouts/[id]/editor/page": "app/layouts/[id]/editor/page.js"
 }

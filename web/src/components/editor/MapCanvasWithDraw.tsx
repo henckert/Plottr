@@ -13,10 +13,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { toast } from 'react-hot-toast';
 import type { components } from '@/types/api';
 import { zonesToFeatureCollection } from '@/lib/map/mappers';
-import { DrawToolbar, type DrawMode } from '@/components/editor/DrawToolbar';
 import { ZonePropertiesPanel } from '@/components/editor/ZonePropertiesPanel';
 import { MeasureDisplay } from '@/components/editor/MeasureDisplay';
-import { ShapePalette, type PitchTemplate } from '@/components/editor/ShapePalette';
 import { useCreateZone, useUpdateZone, useDeleteZone } from '@/hooks/useZones';
 import { validatePolygon, calculateArea, calculatePerimeter } from '@/lib/geospatial-client';
 import { customDrawStyles, getZoneColor } from '@/lib/maplibre-draw-styles';
@@ -595,25 +593,8 @@ export function MapCanvasWithDraw({
 
   return (
     <div className={`relative w-full h-full ${className}`} style={{ minHeight: '500px' }}>
-      {/* Drawing Toolbar */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
-        <DrawToolbar
-          currentMode={drawMode}
-          onModeChange={handleModeChange}
-          onDelete={handleDeleteZone}
-          hasSelection={!!selectedZone}
-          disabled={isLoading || createZoneMutation.isPending || updateZoneMutation.isPending || deleteZoneMutation.isPending}
-        />
-      </div>
+      {/* Old DrawToolbar and ShapePalette removed - now handled by parent editor page */}
       
-      {/* Shape Palette */}
-      <div className="absolute top-4 right-4 z-30" style={{ maxWidth: '320px' }}>
-        <ShapePalette
-          onSelectTemplate={handleSelectTemplate}
-          onSelectRectangle={handleSelectRectangle}
-        />
-      </div>
-
       {/* Map Container */}
       <div ref={mapContainer} className="absolute inset-0" style={{ zIndex: 0 }} />
 

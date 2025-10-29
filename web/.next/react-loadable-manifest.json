@@ -10,9 +10,5 @@
     "files": [
       "static/chunks/_app-pages-browser_node_modules_tanstack_query-devtools_build_DevtoolsPanelComponent_PULY4AJ7_js.js"
     ]
-  },
-  "components\\map\\SiteLocationMap.tsx -> maplibre-gl": {
-    "id": "components\\map\\SiteLocationMap.tsx -> maplibre-gl",
-    "files": []
   }
 }
