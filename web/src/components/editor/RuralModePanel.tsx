@@ -1,18 +1,35 @@
 // web/src/components/editor/RuralModePanel.tsx
 "use client";
 import { useEditorStore } from "@/store/editor.store";
-import { Mountain, Eye } from "lucide-react";
+import { Mountain, Eye, X, GripVertical } from "lucide-react";
 import { useState } from "react";
 
-export function RuralModePanel() {
+interface RuralModePanelProps {
+  onClose: () => void;
+}
+
+export function RuralModePanel({ onClose }: RuralModePanelProps) {
   const { ruralMode, setRuralMode } = useEditorStore();
   const [opacity, setOpacity] = useState(60);
 
   return (
-    <div className="absolute bottom-24 right-4 z-30 rounded-2xl bg-slate-900/80 border border-white/10 p-4 text-white backdrop-blur shadow-xl w-72">
-      <div className="flex items-center gap-2 mb-4">
-        <Mountain className="w-5 h-5 text-emerald-400" />
-        <h3 className="font-semibold">Rural Mode</h3>
+    <div className="rounded-2xl bg-slate-900/80 border border-white/10 p-4 text-white backdrop-blur shadow-xl w-72">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {/* Drag handle */}
+          <div className="drag-handle cursor-move text-white/40 hover:text-white/60 transition-colors -ml-1">
+            <GripVertical className="w-4 h-4" />
+          </div>
+          <Mountain className="w-5 h-5 text-emerald-400" />
+          <h3 className="font-semibold">Rural Mode</h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1 hover:bg-white/10 rounded transition-colors"
+          title="Close panel"
+        >
+          <X className="w-4 h-4 text-white/60 hover:text-white" />
+        </button>
       </div>
 
       <label className="flex items-center gap-3 mb-4 cursor-pointer">

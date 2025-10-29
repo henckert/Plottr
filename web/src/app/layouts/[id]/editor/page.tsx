@@ -22,6 +22,8 @@ import { CommandPalette } from '@/components/editor/CommandPalette';
 import { RuralModePanel } from '@/components/editor/RuralModePanel';
 import { EmptyState } from '@/components/editor/EmptyState';
 import { GridOverlay } from '@/components/editor/GridOverlay';
+import { DraggablePanel } from '@/components/editor/DraggablePanel';
+import { MapGeocodingSearch } from '@/components/editor/MapGeocodingSearch';
 import { useEditorStore } from '@/store/editor.store';
 
 export default function LayoutEditorPage() {
@@ -36,6 +38,7 @@ export default function LayoutEditorPage() {
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [showRuralPanel, setShowRuralPanel] = useState(true);
 
   // Data fetching
   const { data: layout, isLoading: layoutLoading, error: layoutError } = useLayout(layoutId);
@@ -49,6 +52,14 @@ export default function LayoutEditorPage() {
 
   const zones = zonesResponse?.data || [];
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
+
+  // Map state (after site data is available)
+  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(
+    site?.location?.coordinates
+      ? [site.location.coordinates[0], site.location.coordinates[1]]
+      : undefined
+  );
+  const [mapZoom, setMapZoom] = useState<number>(site?.location ? 16 : 15);
 
   // Handlers for QuickStart and EmptyState
   const handleQuickStartComplete = useCallback(() => {
@@ -69,6 +80,14 @@ export default function LayoutEditorPage() {
   const handleTrace = useCallback(() => {
     // TODO: Enable rural mode for tracing
     useEditorStore.getState().setRuralMode(true);
+  }, []);
+
+  // Handle geocoding search result
+  const handleGeocodingResult = useCallback((result: any) => {
+    // Fly to the selected location
+    const [lng, lat] = result.center;
+    setMapCenter([lng, lat]);
+    setMapZoom(result.bbox ? 15 : 17); // Use higher zoom if no bbox
   }, []);
 
   // Handlers
@@ -215,26 +234,39 @@ export default function LayoutEditorPage() {
             selectedZoneId={selectedZoneId}
             onZoneClick={handleZoneClick}
             isLoading={zonesLoading}
-            center={
-              site?.location?.coordinates
-                ? [site.location.coordinates[0], site.location.coordinates[1]]
-                : undefined
-            }
-            zoom={site?.location ? 16 : 15}
+            center={mapCenter}
+            zoom={mapZoom}
           />
 
           {/* Grid Overlay (when snap enabled) */}
           {snapEnabled && <GridOverlay />}
 
-          {/* Toolbar (top-right floating, below map controls) */}
-          <div className="absolute top-16 right-4 z-10">
-            <Toolbar />
+          {/* Location Search Bar (top-left) */}
+          <div className="absolute top-4 left-4 z-10 w-80">
+            <MapGeocodingSearch onResultSelect={handleGeocodingResult} />
           </div>
 
+          {/* Toolbar (top-right floating, below map controls) */}
+          <DraggablePanel 
+            defaultPosition={{ x: 0, y: 0 }}
+            storageKey="editor-toolbar-position"
+          >
+            <div className="absolute top-16 right-4 z-10">
+              <Toolbar />
+            </div>
+          </DraggablePanel>
+
           {/* Rural Mode Panel (bottom-right floating) */}
-          <div className="absolute bottom-20 right-4 z-10">
-            <RuralModePanel />
-          </div>
+          {showRuralPanel && (
+            <DraggablePanel
+              defaultPosition={{ x: 0, y: 0 }}
+              storageKey="editor-rural-panel-position"
+            >
+              <div className="absolute bottom-20 right-4 z-10">
+                <RuralModePanel onClose={() => setShowRuralPanel(false)} />
+              </div>
+            </DraggablePanel>
+          )}
 
           {/* Zone Detail Panel (when zone selected and not editing) */}
           {selectedZone && !isEditMode && (

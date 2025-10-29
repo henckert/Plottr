@@ -1,7 +1,7 @@
 // web/src/components/editor/Toolbar.tsx
 "use client";
 import { useEditorStore } from "@/store/editor.store";
-import { MousePointer2, Pencil, Ruler, Move, Grid3x3, CopyPlus } from "lucide-react";
+import { MousePointer2, Pencil, Ruler, Move, Grid3x3, CopyPlus, GripVertical } from "lucide-react";
 
 export function Toolbar() {
   const { activeTool, setTool, toggleUnits, unitSystem, toggleSnap, snapEnabled } = useEditorStore();
@@ -23,6 +23,11 @@ export function Toolbar() {
 
   return (
     <div className="flex gap-2 bg-slate-900/80 border border-white/10 rounded-2xl p-2 backdrop-blur shadow-xl">
+      {/* Drag handle */}
+      <div className="drag-handle cursor-move flex items-center px-1 text-white/40 hover:text-white/60 transition-colors">
+        <GripVertical className="w-4 h-4" />
+      </div>
+
       <ToolButton id="select" label="Select" icon={MousePointer2} />
       <ToolButton id="draw" label="Draw" icon={Pencil} />
       <ToolButton id="measure" label="Measure" icon={Ruler} />
