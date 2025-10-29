@@ -14,7 +14,6 @@ import { toast } from 'react-hot-toast';
 import type { components } from '@/types/api';
 import { zonesToFeatureCollection } from '@/lib/map/mappers';
 import { ZonePropertiesPanel } from '@/components/editor/ZonePropertiesPanel';
-import { MeasureDisplay } from '@/components/editor/MeasureDisplay';
 import { useCreateZone, useUpdateZone, useDeleteZone } from '@/hooks/useZones';
 import { validatePolygon, calculateArea, calculatePerimeter } from '@/lib/geospatial-client';
 import { customDrawStyles, getZoneColor } from '@/lib/maplibre-draw-styles';
@@ -22,6 +21,17 @@ import { createPitchFromTemplate, createRectangle } from '@/lib/map/shapes';
 
 type Zone = components['schemas']['Zone'];
 type ZoneCreate = components['schemas']['ZoneCreate'];
+
+// DrawMode type (previously from DrawToolbar)
+type DrawMode = 'none' | 'draw_polygon' | 'simple_select' | 'direct_select';
+
+// Template types (previously from ShapePalette)
+interface PitchTemplate {
+  id: string;
+  name: string;
+  sport: string;
+  dimensions: { length_m: number; width_m: number };
+}
 
 interface MapCanvasWithDrawProps {
   zones: Zone[];
@@ -612,16 +622,7 @@ export function MapCanvasWithDraw({
         </div>
       )}
       
-      {/* Real-time Measurements - appears while drawing */}
-      {isDrawing && (currentMeasurements.perimeter_m || currentMeasurements.area_m2) && (
-        <div className="absolute bottom-4 left-4">
-          <MeasureDisplay
-            perimeter_m={currentMeasurements.perimeter_m}
-            area_m2={currentMeasurements.area_m2}
-            imperialUnits={imperialUnits}
-          />
-        </div>
-      )}
+      {/* Real-time Measurements - now handled by BottomStatus component in parent */}
       
       {/* Finish Drawing Button - appears when actively drawing a polygon */}
       {isDrawing && (
