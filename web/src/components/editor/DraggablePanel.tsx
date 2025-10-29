@@ -50,7 +50,7 @@ export function DraggablePanel({
       bounds={bounds}
       handle=".drag-handle"
     >
-      <div>
+      <div className="inline-block">
         {children}
       </div>
     </Draggable>

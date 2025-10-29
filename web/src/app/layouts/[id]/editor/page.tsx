@@ -247,25 +247,25 @@ export default function LayoutEditorPage() {
           </div>
 
           {/* Toolbar (top-right floating, below map controls) */}
-          <DraggablePanel 
-            defaultPosition={{ x: 0, y: 0 }}
-            storageKey="editor-toolbar-position"
-          >
-            <div className="absolute top-16 right-4 z-10">
+          <div className="absolute top-16 right-4 z-10">
+            <DraggablePanel 
+              defaultPosition={{ x: 0, y: 0 }}
+              storageKey="editor-toolbar-position"
+            >
               <Toolbar />
-            </div>
-          </DraggablePanel>
+            </DraggablePanel>
+          </div>
 
           {/* Rural Mode Panel (bottom-right floating) */}
           {showRuralPanel && (
-            <DraggablePanel
-              defaultPosition={{ x: 0, y: 0 }}
-              storageKey="editor-rural-panel-position"
-            >
-              <div className="absolute bottom-20 right-4 z-10">
+            <div className="absolute bottom-20 right-4 z-10">
+              <DraggablePanel
+                defaultPosition={{ x: 0, y: 0 }}
+                storageKey="editor-rural-panel-position"
+              >
                 <RuralModePanel onClose={() => setShowRuralPanel(false)} />
-              </div>
-            </DraggablePanel>
+              </DraggablePanel>
+            </div>
           )}
 
           {/* Zone Detail Panel (when zone selected and not editing) */}
