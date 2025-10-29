@@ -7,9 +7,9 @@ export function BottomStatus() {
   // TODO: wire live perimeter/area from draw tool
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
-      <div className="rounded-xl bg-slate-900/80 border border-white/10 px-5 py-3 text-white/80 text-sm backdrop-blur shadow-xl">
-        <div className="flex items-center gap-6">
+    <div className="h-14 bg-slate-900/95 border-t border-white/10 backdrop-blur-sm">
+      <div className="h-full max-w-7xl mx-auto px-6 flex items-center justify-center">
+        <div className="flex items-center gap-6 text-white/80 text-sm">
           <span>Perimeter: —</span>
           <span>Area: —</span>
           <span>Units: <span className="text-white font-medium">{unitSystem}</span></span>
