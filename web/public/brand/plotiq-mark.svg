@@ -1,0 +1,17 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- PlotIQ Icon Mark -->
+  <defs>
+    <linearGradient id="mark-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Map pin -->
+  <path d="M24 4C16.268 4 10 10.268 10 18c0 13.5 14 26 14 26s14-12.5 14-26c0-7.732-6.268-14-14-14z" 
+        fill="url(#mark-gradient)"/>
+  
+  <!-- Grid/crosshair -->
+  <circle cx="24" cy="18" r="7" fill="white"/>
+  <path d="M20 18h8M24 14v8" stroke="url(#mark-gradient)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

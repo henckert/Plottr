@@ -15,9 +15,12 @@ import type { components } from '@/types/api';
 import { zonesToFeatureCollection } from '@/lib/map/mappers';
 import { DrawToolbar, type DrawMode } from '@/components/editor/DrawToolbar';
 import { ZonePropertiesPanel } from '@/components/editor/ZonePropertiesPanel';
+import { MeasureDisplay } from '@/components/editor/MeasureDisplay';
+import { ShapePalette, type PitchTemplate } from '@/components/editor/ShapePalette';
 import { useCreateZone, useUpdateZone, useDeleteZone } from '@/hooks/useZones';
 import { validatePolygon, calculateArea, calculatePerimeter } from '@/lib/geospatial-client';
 import { customDrawStyles, getZoneColor } from '@/lib/maplibre-draw-styles';
+import { createPitchFromTemplate, createRectangle } from '@/lib/map/shapes';
 
 type Zone = components['schemas']['Zone'];
 type ZoneCreate = components['schemas']['ZoneCreate'];
@@ -64,6 +67,11 @@ export function MapCanvasWithDraw({
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
   const [selectedZone, setSelectedZone] = useState<ZoneFormData | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false); // Track if actively drawing
+  const [currentMeasurements, setCurrentMeasurements] = useState<{
+    perimeter_m?: number;
+    area_m2?: number;
+  }>({});
   
   // Mutations
   const createZoneMutation = useCreateZone();
@@ -138,6 +146,42 @@ export function MapCanvasWithDraw({
     map.current.on('draw.update', handleDrawUpdate);
     map.current.on('draw.delete', handleDrawDelete);
     map.current.on('draw.selectionchange', handleSelectionChange);
+    
+    // Track drawing mode changes
+    map.current.on('draw.modechange', (e: any) => {
+      const isDrawingMode = e.mode === 'draw_polygon';
+      setIsDrawing(isDrawingMode);
+      if (!isDrawingMode) {
+        setCurrentMeasurements({});
+      }
+    });
+    
+    // Track measurements in real-time while drawing
+    map.current.on('draw.render', () => {
+      if (!draw.current) return;
+      
+      const data = draw.current.getAll();
+      const features = data.features.filter((f: any) => f.geometry.type === 'Polygon');
+      
+      if (features.length > 0) {
+        const feature = features[0];
+        const coords = (feature.geometry as any).coordinates[0];
+        
+        // Need at least 3 points to calculate area
+        if (coords && coords.length >= 3) {
+          try {
+            const area = calculateArea(feature.geometry as any);
+            const perimeter = calculatePerimeter(feature.geometry as any);
+            setCurrentMeasurements({
+              area_m2: area.m2,
+              perimeter_m: perimeter.m,
+            });
+          } catch {
+            // Incomplete polygon, ignore
+          }
+        }
+      }
+    });
 
     return () => {
       if (draw.current && map.current) {
@@ -145,6 +189,7 @@ export function MapCanvasWithDraw({
         draw.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded]);
 
   // Handle draw mode changes
@@ -156,13 +201,19 @@ export function MapCanvasWithDraw({
     switch (mode) {
       case 'draw_polygon':
         draw.current.changeMode('draw_polygon');
+        setIsDrawing(true);
+        setCurrentMeasurements({});
         break;
       case 'simple_select':
         draw.current.changeMode('simple_select');
+        setIsDrawing(false);
+        setCurrentMeasurements({});
         break;
       case 'direct_select':
         // MapboxDraw uses 'direct_select' but TS types are incomplete
         (draw.current as any).changeMode('direct_select');
+        setIsDrawing(false);
+        setCurrentMeasurements({});
         break;
       case 'none':
         draw.current.changeMode('simple_select');
@@ -172,9 +223,30 @@ export function MapCanvasWithDraw({
         }
         setSelectedZone(null);
         setIsPanelOpen(false);
+        setIsDrawing(false);
+        setCurrentMeasurements({});
         break;
     }
   }, []);
+  
+  // Finish drawing polygon manually
+  const handleFinishDrawing = useCallback(() => {
+    if (!draw.current || !isDrawing) return;
+    
+    // Get the current drawing feature
+    const data = draw.current.getAll();
+    const currentFeature = data.features.find((f: any) => f.geometry.type === 'Polygon');
+    
+    if (currentFeature && (currentFeature.geometry as any).coordinates[0].length >= 4) {
+      // Complete the polygon by triggering the create event
+      // MapboxDraw automatically fires draw.create when we change mode
+      draw.current.changeMode('simple_select');
+      setIsDrawing(false);
+      setCurrentMeasurements({});
+    } else {
+      toast.error('Need at least 3 points to create a polygon');
+    }
+  }, [isDrawing]);
 
   // Handle polygon creation
   const handleDrawCreate = useCallback((e: any) => {
@@ -225,16 +297,20 @@ export function MapCanvasWithDraw({
     }
 
     // If there's a selected zone with this tempId, update its geometry
-    if (selectedZone?.tempId === feature.id) {
+    if (selectedZone?.tempId === feature.id && selectedZone) {
       const area = calculateArea(feature.geometry);
       const perimeter = calculatePerimeter(feature.geometry);
       setSelectedZone({
-        ...selectedZone,
+        id: selectedZone.id,
+        tempId: selectedZone.tempId,
+        name: selectedZone.name,
+        zone_type: selectedZone.zone_type,
+        surface_type: selectedZone.surface_type,
+        color: selectedZone.color,
+        notes: selectedZone.notes,
         geometry: feature.geometry,
         area_m2: area.m2,
         perimeter_m: perimeter.m,
-        name: selectedZone.name,
-        zone_type: selectedZone.zone_type,
       });
     }
   }, [selectedZone]);
@@ -415,6 +491,106 @@ export function MapCanvasWithDraw({
 
     addZonesWhenReady();
   }, [zones, isLoaded, onZoneClick]);
+  
+  // Keyboard shortcuts for finishing polygon
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Enter key: Finish drawing polygon
+      if (e.key === 'Enter' && isDrawing) {
+        e.preventDefault();
+        handleFinishDrawing();
+      }
+      
+      // Escape key: Cancel drawing
+      if (e.key === 'Escape' && isDrawing) {
+        e.preventDefault();
+        if (draw.current) {
+          draw.current.trash();
+          draw.current.changeMode('simple_select');
+          setIsDrawing(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawing, handleFinishDrawing]);
+  
+  // Handle template selection
+  const handleSelectTemplate = useCallback((template: PitchTemplate) => {
+    if (!map.current || !draw.current) return;
+    
+    // Get map center as default placement
+    const center = map.current.getCenter();
+    
+    // Create polygon from template
+    const polygon = createPitchFromTemplate(template, center.lng, center.lat, 0);
+    
+    // Add to draw as a new feature
+    const featureId = draw.current.add({
+      type: 'Feature',
+      properties: {},
+      geometry: polygon,
+    });
+    
+    // Calculate measurements
+    const area = calculateArea(polygon);
+    const perimeter = calculatePerimeter(polygon);
+    
+    // Open properties panel
+    setSelectedZone({
+      tempId: featureId[0],
+      name: template.name,
+      zone_type: 'pitch',
+      surface_type: 'grass',
+      color: getZoneColor('pitch'),
+      notes: `${template.sport} - ${template.description || ''}`,
+      geometry: polygon,
+      area_m2: area.m2,
+      perimeter_m: perimeter.m,
+    });
+    setIsPanelOpen(true);
+    
+    toast.success(`Added ${template.name} template`);
+  }, []);
+  
+  // Handle rectangle tool
+  const handleSelectRectangle = useCallback(() => {
+    if (!map.current || !draw.current) return;
+    
+    // Get map center
+    const center = map.current.getCenter();
+    
+    // Create a 50m x 30m rectangle as starting point
+    const polygon = createRectangle(center.lng, center.lat, 50, 30, 0);
+    
+    // Add to draw
+    const featureId = draw.current.add({
+      type: 'Feature',
+      properties: {},
+      geometry: polygon,
+    });
+    
+    // Calculate measurements
+    const area = calculateArea(polygon);
+    const perimeter = calculatePerimeter(polygon);
+    
+    // Open properties panel
+    setSelectedZone({
+      tempId: featureId[0],
+      name: 'Rectangle Zone',
+      zone_type: 'other',
+      surface_type: null,
+      color: getZoneColor('other'),
+      notes: null,
+      geometry: polygon,
+      area_m2: area.m2,
+      perimeter_m: perimeter.m,
+    });
+    setIsPanelOpen(true);
+    
+    toast.success('Created rectangle - adjust size and position as needed');
+  }, []);
 
   return (
     <div className={`relative w-full h-full ${className}`} style={{ minHeight: '500px' }}>
@@ -426,6 +602,14 @@ export function MapCanvasWithDraw({
           onDelete={handleDeleteZone}
           hasSelection={!!selectedZone}
           disabled={isLoading || createZoneMutation.isPending || updateZoneMutation.isPending || deleteZoneMutation.isPending}
+        />
+      </div>
+      
+      {/* Shape Palette */}
+      <div className="absolute top-4 right-4 z-30" style={{ maxWidth: '320px' }}>
+        <ShapePalette
+          onSelectTemplate={handleSelectTemplate}
+          onSelectRectangle={handleSelectRectangle}
         />
       </div>
 
@@ -440,9 +624,38 @@ export function MapCanvasWithDraw({
       )}
 
       {/* Zone Count */}
-      {isLoaded && !isLoading && zones.length > 0 && (
+      {isLoaded && !isLoading && zones.length > 0 && !isDrawing && (
         <div className="absolute bottom-4 left-4 bg-white px-3 py-2 rounded shadow-md text-sm" style={{ zIndex: 20 }}>
           <span className="font-semibold">{zones.length}</span> zones
+        </div>
+      )}
+      
+      {/* Real-time Measurements - appears while drawing */}
+      {isDrawing && (currentMeasurements.perimeter_m || currentMeasurements.area_m2) && (
+        <div className="absolute bottom-4 left-4">
+          <MeasureDisplay
+            perimeter_m={currentMeasurements.perimeter_m}
+            area_m2={currentMeasurements.area_m2}
+            imperialUnits={imperialUnits}
+          />
+        </div>
+      )}
+      
+      {/* Finish Drawing Button - appears when actively drawing a polygon */}
+      {isDrawing && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-2">
+          <button
+            onClick={handleFinishDrawing}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg font-semibold flex items-center gap-2 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Finish Drawing
+          </button>
+          <div className="bg-white px-4 py-3 rounded-lg shadow-lg text-sm text-gray-600">
+            <span className="font-semibold">Tip:</span> Double-click last point, press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-xs font-mono">Enter</kbd>, or click this button
+          </div>
         </div>
       )}
 

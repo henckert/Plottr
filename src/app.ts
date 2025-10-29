@@ -12,6 +12,7 @@ import { authMiddleware } from './middleware/auth';
 import { requestLoggingMiddleware, errorLoggingMiddleware } from './middleware/logging';
 import { makeRateLimiter } from './middleware/rateLimitBypass';
 import { healthCheck, healthCheckDetailed, readinessProbe, livenessProbe } from './controllers/health.controller';
+import { getPublicShareView } from './controllers/share-links.controller';
 import apiRoutes from './routes';
 
 // Rate limiters with E2E bypass
@@ -104,6 +105,9 @@ export default function createApp() {
   app.get('/ready', publicLimiter, readinessProbe as any);
   app.get('/live', publicLimiter, livenessProbe as any);
 
+  // Public share link view (no auth required)
+  app.get('/share/:slug', publicLimiter, getPublicShareView as any);
+
   // API Documentation (Swagger UI)
   if (swaggerDocument) {
     // Customize Swagger UI options
@@ -128,6 +132,13 @@ export default function createApp() {
     // Also serve raw OpenAPI spec at /api/openapi.json
     app.get('/api/openapi.json', publicLimiter, (req, res) => {
       res.json(swaggerDocument);
+    });
+
+    // Serve raw OpenAPI YAML spec at /api/openapi.yaml
+    app.get('/api/openapi.yaml', publicLimiter, (req, res) => {
+      res.type('text/yaml');
+      const openapiPath = path.resolve(__dirname, '../openapi/plottr.yaml');
+      res.sendFile(openapiPath);
     });
 
     // eslint-disable-next-line no-console

@@ -44,8 +44,6 @@ export function MapCanvas({
   isLoading = false,
   enableDrawing = false,
   drawMode = 'zone',
-  venueId,
-  layoutId = 15,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -55,7 +53,6 @@ export function MapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [currentZones, setCurrentZones] = useState<Zone[]>(zones);
   const [diagnostics, setDiagnostics] = useState({
     containerWidth: 0,
     containerHeight: 0,
@@ -423,7 +420,6 @@ export function MapCanvas({
         <MapDrawControl
           map={mapRef.current}
           mode={drawMode}
-          venueId={venueId}
           onPolygonComplete={async (geojson) => {
             try {
               await onPolygonCreate(geojson);
@@ -449,7 +445,6 @@ export function MapCanvas({
               }
             }
           }}
-          onRefreshZones={refreshZonesFromProp}
           onSetZoneFilter={setZoneLayerFilters}
           onStartEditingRef={onStartEditingRef}
         />

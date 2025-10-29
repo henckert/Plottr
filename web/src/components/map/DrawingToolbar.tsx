@@ -233,6 +233,7 @@ export function DrawingToolbar({
 
     // Set initial mode
     if (initialMode !== 'simple_select') {
+      // @ts-ignore - MapboxDraw types incomplete for MapLibre; mode strings are valid at runtime
       draw.current.changeMode(initialMode);
       setCurrentMode(initialMode);
     }

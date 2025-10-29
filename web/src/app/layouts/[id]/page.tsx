@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Home, ChevronRight, Edit, Trash2, ExternalLink, MapPin, Calendar, AlertCircle } from 'lucide-react';
+import { Home, ChevronRight, Edit, Trash2, ExternalLink, MapPin, Calendar, AlertCircle, Share2, Copy, Eye, Clock } from 'lucide-react';
 import { useLayout, useDeleteLayout } from '@/hooks/useLayouts';
 import { useSite } from '@/hooks/useSites';
 import { useZones } from '@/hooks/useZones';
+import { useShareLinks, useCreateShareLink, useDeleteShareLink } from '@/hooks/useShareLinks';
 import toast from 'react-hot-toast';
 
 // Simple time formatter
@@ -42,6 +43,8 @@ export default function LayoutDetailPage() {
   const id = params.id as string;
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [expirationDate, setExpirationDate] = useState('');
 
   // Fetch layout
   const { data: layout, isLoading, error } = useLayout(Number(id));
@@ -53,8 +56,15 @@ export default function LayoutDetailPage() {
   const { data: zonesData } = useZones({ layoutId: Number(id), limit: 100 });
   const zones = zonesData?.data || [];
 
+  // Fetch share links
+  const { data: shareLinks = [] } = useShareLinks(Number(id));
+
   // Delete mutation
   const deleteMutation = useDeleteLayout();
+
+  // Share link mutations
+  const createShareMutation = useCreateShareLink();
+  const deleteShareMutation = useDeleteShareLink();
 
   const handleDelete = async () => {
     if (!layout?.version_token) {
@@ -76,6 +86,35 @@ export default function LayoutDetailPage() {
       } else {
         toast.error(err?.response?.data?.message || 'Failed to delete layout');
       }
+    }
+  };
+
+  const handleCreateShareLink = async () => {
+    try {
+      await createShareMutation.mutateAsync({
+        layout_id: Number(id),
+        expires_at: expirationDate || undefined,
+      });
+      setShowShareModal(false);
+      setExpirationDate('');
+    } catch (err) {
+      // Error handled by mutation
+    }
+  };
+
+  const handleCopyShareLink = (slug: string) => {
+    const url = `${window.location.origin}/share/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Share link copied to clipboard');
+  };
+
+  const handleRevokeShareLink = async (shareLinkId: number) => {
+    if (!confirm('Revoke this share link? This cannot be undone.')) return;
+
+    try {
+      await deleteShareMutation.mutateAsync(shareLinkId);
+    } catch (err) {
+      // Error handled by mutation
     }
   };
 
@@ -205,6 +244,102 @@ export default function LayoutDetailPage() {
           </div>
         </div>
 
+        {/* Share Links Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Share Links ({shareLinks.length})
+            </h2>
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium text-sm"
+            >
+              <Share2 className="w-4 h-4" />
+              Create Share Link
+            </button>
+          </div>
+
+          {shareLinks.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+              <Share2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 mb-2">No share links yet</p>
+              <p className="text-sm text-gray-500">
+                Create a share link to let others view this layout without logging in
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {shareLinks.map((link) => {
+                const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
+                const expiresIn = link.expires_at
+                  ? Math.ceil((new Date(link.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  : null;
+
+                return (
+                  <div
+                    key={link.id}
+                    className={`border rounded-lg p-4 ${
+                      isExpired ? 'border-red-200 bg-red-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        {/* URL */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <code className="flex-1 px-3 py-2 bg-gray-100 rounded text-sm font-mono text-gray-900 truncate">
+                            {window.location.origin}/share/{link.slug}
+                          </code>
+                          <button
+                            onClick={() => handleCopyShareLink(link.slug)}
+                            className="px-3 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex-shrink-0"
+                            title="Copy to clipboard"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{link.view_count} views</span>
+                          </div>
+                          {link.last_accessed_at && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              <span>Last viewed {formatTimeAgo(link.last_accessed_at)}</span>
+                            </div>
+                          )}
+                          {link.expires_at && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              <span className={isExpired ? 'text-red-600 font-medium' : ''}>
+                                {isExpired
+                                  ? 'Expired'
+                                  : expiresIn && expiresIn < 7
+                                  ? `Expires in ${expiresIn} day${expiresIn === 1 ? '' : 's'}`
+                                  : `Expires ${formatDate(link.expires_at)}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <button
+                        onClick={() => handleRevokeShareLink(link.id)}
+                        className="px-3 py-2 text-red-700 bg-red-50 rounded hover:bg-red-100 flex-shrink-0 text-sm font-medium"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Zones Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -283,6 +418,62 @@ export default function LayoutDetailPage() {
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteMutation.isPending}
+                className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Share Link Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Share2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Create Share Link</h3>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Create a public share link for <strong>&quot;{layout.name}&quot;</strong>. Anyone with the link can view this layout without logging in.
+            </p>
+
+            {/* Optional Expiration */}
+            <div className="mb-6">
+              <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700 mb-2">
+                Expiration (optional)
+              </label>
+              <input
+                type="datetime-local"
+                id="expirationDate"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                min={new Date().toISOString().slice(0, 16)}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Leave blank for a link that never expires
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCreateShareLink}
+                disabled={createShareMutation.isPending}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 font-medium"
+              >
+                {createShareMutation.isPending ? 'Creating...' : 'Create Share Link'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  setExpirationDate('');
+                }}
+                disabled={createShareMutation.isPending}
                 className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
               >
                 Cancel

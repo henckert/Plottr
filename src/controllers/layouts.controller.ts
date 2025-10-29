@@ -40,17 +40,8 @@ export async function listLayouts(req: AuthenticatedRequest, res: Response, next
     }
 
     // Extract club_id from authenticated user context
-    // In production, this would come from the user's club membership
-    // For now, we'll require it as a query param (TODO: get from user context)
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-    if (!clubId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_CLUB_ID',
-          message: 'club_id query parameter is required',
-        },
-      });
-    }
+    // In dev mode (AUTH_REQUIRED=false), club_id defaults to 1 for demo
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     let params;
     try {
@@ -115,16 +106,8 @@ export async function getLayout(req: AuthenticatedRequest, res: Response, next: 
       });
     }
 
-    // Extract club_id from query (TODO: get from user context)
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-    if (!clubId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_CLUB_ID',
-          message: 'club_id query parameter is required',
-        },
-      });
-    }
+    // Extract club_id from query (dev mode defaults to 1)
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     const layout = await service.get(id, clubId);
 
@@ -158,16 +141,8 @@ export async function createLayout(req: AuthenticatedRequest, res: Response, nex
       });
     }
 
-    // Extract club_id from query (TODO: get from user context)
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-    if (!clubId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_CLUB_ID',
-          message: 'club_id query parameter is required',
-        },
-      });
-    }
+    // Extract club_id from query (dev mode defaults to 1)
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     // Get created_by from authenticated user
     const createdBy = req.user?.clerkId || 'unknown';
@@ -232,15 +207,8 @@ export async function updateLayout(req: AuthenticatedRequest, res: Response, nex
     }
 
     // Extract club_id from query (TODO: get from user context)
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-    if (!clubId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_CLUB_ID',
-          message: 'club_id query parameter is required',
-        },
-      });
-    }
+    // Extract club_id from query (dev mode defaults to 1)
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     // Update with version token validation
     const updated = await service.update(id, ifMatch as string, parsed.data, clubId);
@@ -286,16 +254,8 @@ export async function deleteLayout(req: AuthenticatedRequest, res: Response, nex
       });
     }
 
-    // Extract club_id from query (TODO: get from user context)
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-    if (!clubId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_CLUB_ID',
-          message: 'club_id query parameter is required',
-        },
-      });
-    }
+    // Extract club_id from query (dev mode defaults to 1)
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     // Delete with version token validation
     await service.delete(id, ifMatch as string, clubId);

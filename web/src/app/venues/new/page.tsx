@@ -81,7 +81,7 @@ export default function NewVenuePage() {
   };
 
   // Handle polygon drawn on map
-  const handlePolygonDrawn = (feature: any) => {
+  const handlePolygonDrawn = async (feature: any): Promise<void> => {
     console.log('[NewVenuePage] Polygon drawn:', feature);
     setDrawnBoundary(feature);
     
@@ -93,7 +93,7 @@ export default function NewVenuePage() {
   };
 
   // Handle polygon updated
-  const handlePolygonUpdated = (feature: any) => {
+  const handlePolygonUpdated = async (feature: any): Promise<void> => {
     console.log('[NewVenuePage] Polygon updated:', feature);
     setDrawnBoundary(feature);
     
@@ -104,7 +104,7 @@ export default function NewVenuePage() {
   };
 
   // Handle polygon deleted
-  const handlePolygonDeleted = () => {
+  const handlePolygonDeleted = async (): Promise<void> => {
     console.log('[NewVenuePage] Polygon deleted');
     setDrawnBoundary(null);
     
@@ -319,13 +319,9 @@ export default function NewVenuePage() {
           <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '700px' }}>
             <MapDrawControl
               mode="venue"
-              initialCenter={mapCenter}
-              initialZoom={mapZoom}
-              onPolygonDrawn={handlePolygonDrawn}
-              onPolygonUpdated={handlePolygonUpdated}
-              onPolygonDeleted={handlePolygonDeleted}
-              maxAreaKm2={10}
-              showSearchBar={false} // We have our own search bar in the form
+              onPolygonComplete={handlePolygonDrawn}
+              onPolygonUpdate={async (_id, geojson) => handlePolygonUpdated(geojson)}
+              onPolygonDelete={async (_id) => handlePolygonDeleted()}
             />
           </div>
         </div>

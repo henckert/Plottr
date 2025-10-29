@@ -27,3 +27,14 @@ textarea,
 select {
   @apply border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary;
 }
+
+/* Ensure MapLibre canvas is visible */
+.maplibregl-canvas {
+  display: block !important;
+}
+
+.maplibregl-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

@@ -10,17 +10,15 @@ import { useEffect, useRef, useState } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import * as turf from '@turf/turf';
-import { Pencil, Square, Trash2, Save, X } from 'lucide-react';
+import { Pencil, Trash2, Save, X } from 'lucide-react';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
 interface MapDrawControlProps {
-  map: MapLibreMap;
+  map?: MapLibreMap | null;
   onPolygonComplete: (geojson: GeoJSON.Feature<GeoJSON.Polygon>) => Promise<void>;
   onPolygonUpdate: (id: string, geojson: GeoJSON.Feature<GeoJSON.Polygon>) => Promise<void>;
   onPolygonDelete: (id: string) => Promise<void>;
   mode?: 'venue' | 'zone';
-  venueId?: number;
-  onRefreshZones?: () => void;
   onSetZoneFilter?: (excludeId: string | null) => void;
   onStartEditingRef?: React.MutableRefObject<((id: string, feature: any) => void) | null>;
 }
@@ -33,11 +31,15 @@ export function MapDrawControl({
   onPolygonUpdate,
   onPolygonDelete,
   mode = 'zone',
-  venueId,
-  onRefreshZones,
   onSetZoneFilter,
   onStartEditingRef,
 }: MapDrawControlProps) {
+  // Runtime guard: if no map instance provided, render nothing
+  if (!map) {
+    console.warn('[MapDrawControl] No map instance provided, cannot render drawing controls');
+    return null;
+  }
+
   const drawRef = useRef<MapboxDraw | null>(null);
   const [activeMode, setActiveMode] = useState<DrawMode>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -342,10 +344,13 @@ export function MapDrawControl({
       return;
     }
 
+    // After type guard, TypeScript knows feature.geometry is Polygon
+    const polygonFeature = feature as GeoJSON.Feature<GeoJSON.Polygon>;
+
     console.log('[MapDrawControl] Saving edit for zone:', editingZoneId);
     
     // Validate before saving
-    const error = validatePolygon(feature);
+    const error = validatePolygon(polygonFeature);
     if (error) {
       setValidationError(error);
       return;
@@ -354,7 +359,7 @@ export function MapDrawControl({
     
     try {
       // Save changes to backend (parent will reload zones)
-      await onPolygonUpdate(editingZoneId, feature);
+      await onPolygonUpdate(editingZoneId, polygonFeature);
       
       console.log('[MapDrawControl] Edit saved successfully');
       

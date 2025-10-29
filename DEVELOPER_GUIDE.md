@@ -555,6 +555,332 @@ feat: add cursor pagination to venues list
 
 ---
 
+## Templates API
+
+### Overview
+
+The Templates API enables rapid field layout creation by allowing users to save and reuse zone/asset configurations. Templates store zone and asset definitions without geometry, which users add after applying the template.
+
+### Data Model
+
+**Template Schema**:
+```typescript
+interface Template {
+  id: number;
+  created_by: string | null;      // UUID FK to users.clerk_id
+  name: string;
+  sport_type: string | null;      // 'soccer', 'rugby', 'training', etc.
+  description: string | null;
+  zones: TemplateZone[];          // JSONB array
+  assets: TemplateAsset[];        // JSONB array
+  thumbnail_url: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TemplateZone {
+  name: string;
+  zone_type: string;
+  color?: string;
+  surface?: string;
+}
+
+interface TemplateAsset {
+  name: string;
+  asset_type: string;
+  icon?: string;
+  properties?: Record<string, any>;
+}
+```
+
+### Endpoints
+
+#### List Templates
+```
+GET /api/templates
+```
+
+**Query Parameters**:
+- `sport_type`: Filter by sport (e.g., `soccer`, `rugby`)
+- `is_public`: Boolean filter for public templates
+- `created_by`: Filter by creator user ID
+- `limit`: Results per page (default: 50, max: 100)
+- `cursor`: Pagination cursor
+
+**Example**:
+```bash
+curl "http://localhost:3001/api/templates?sport_type=soccer&limit=10"
+```
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Standard Soccer Field",
+      "sport_type": "soccer",
+      "zones": [
+        {"name": "Main Pitch", "zone_type": "full_pitch", "color": "#00FF00"}
+      ],
+      "assets": [
+        {"name": "North Goal", "asset_type": "goal"}
+      ],
+      "is_public": true
+    }
+  ],
+  "next_cursor": "base64cursor...",
+  "has_more": true
+}
+```
+
+#### Get Template by ID
+```
+GET /api/templates/:id
+```
+
+**Example**:
+```bash
+curl http://localhost:3001/api/templates/1
+```
+
+#### Create Template from Layout
+```
+POST /api/templates/from-layout
+Authorization: Bearer <token>
+```
+
+**Body**:
+```json
+{
+  "layout_id": 5,
+  "name": "My Custom Template",
+  "sport_type": "soccer",
+  "description": "Custom layout for our fields",
+  "is_public": false
+}
+```
+
+**Process**:
+1. Fetches all zones from layout
+2. Fetches all assets from layout
+3. Strips geometry from zones/assets (keeps metadata only)
+4. Creates template with zones/assets as JSONB
+5. Returns created template
+
+**Example**:
+```bash
+curl -X POST http://localhost:3001/api/templates/from-layout \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "layout_id": 1,
+    "name": "Elite Training Complex",
+    "sport_type": "training",
+    "is_public": true
+  }'
+```
+
+#### Apply Template to Layout
+```
+POST /api/templates/:id/apply
+Authorization: Bearer <token>
+```
+
+**Body**:
+```json
+{
+  "layout_id": 1,
+  "clear_existing": true
+}
+```
+
+**Process**:
+1. Optional: Delete existing zones/assets if `clear_existing: true`
+2. Create placeholder zones (without geometry) from template
+3. Create placeholder assets (without geometry) from template
+4. Return summary of created items
+
+**Returns**:
+```json
+{
+  "data": {
+    "message": "Template applied successfully",
+    "zones_created": ["Main Pitch", "Goal Area North"],
+    "assets_created": ["North Goal", "South Goal"]
+  }
+}
+```
+
+**Important**: Created zones/assets have `null` geometry. Users must draw geometry in the layout editor.
+
+#### Delete Template
+```
+DELETE /api/templates/:id
+Authorization: Bearer <token>
+```
+
+**Permissions**: Only creator or admin can delete.
+
+### Implementation Pattern
+
+**Repository Layer** (`src/data/templates.repo.ts`):
+```typescript
+export async function list(filters: TemplateFilters, limit: number, cursor?: string) {
+  let query = getKnex()('templates')
+    .select('*')
+    .orderBy('updated_at', 'desc')
+    .limit(limit);
+
+  // Apply filters
+  if (filters.sport_type) {
+    query = query.where('sport_type', filters.sport_type);
+  }
+
+  // Apply cursor pagination
+  if (cursor) {
+    const decoded = decodeCursor(cursor);
+    query = query.where('id', '>', decoded.id);
+  }
+
+  return await query;
+}
+```
+
+**Service Layer** (`src/services/templates.service.ts`):
+```typescript
+export async function createFromLayout(data: TemplateCreateFromLayout, userId: string) {
+  // Fetch zones and assets from layout
+  const zones = await zonesRepo.listByLayout(data.layout_id);
+  const assets = await assetsRepo.listByLayout(data.layout_id);
+
+  // Strip geometry, keep metadata only
+  const templateZones = zones.map(z => ({
+    name: z.name,
+    zone_type: z.zone_type,
+    color: z.color,
+    surface: z.surface,
+  }));
+
+  const templateAssets = assets.map(a => ({
+    name: a.name,
+    asset_type: a.asset_type,
+    icon: a.icon,
+    properties: a.properties,
+  }));
+
+  // Create template
+  return await templatesRepo.create({
+    created_by: userId,
+    name: data.name,
+    sport_type: data.sport_type,
+    zones: templateZones,
+    assets: templateAssets,
+    is_public: data.is_public ?? false,
+  });
+}
+```
+
+**Controller Layer** (`src/controllers/templates.controller.ts`):
+```typescript
+export async function applyTemplate(req: AuthenticatedRequest, res: Response) {
+  const templateId = Number(req.params.id);
+  const { layout_id, clear_existing } = req.body;
+
+  const result = await service.applyToLayout(
+    templateId,
+    layout_id,
+    clear_existing ?? true
+  );
+
+  return res.json({ data: result });
+}
+```
+
+### Testing
+
+**Integration Test** (`tests/integration/templates.test.ts`):
+```typescript
+describe('Templates API', () => {
+  test('GET /api/templates returns templates', async () => {
+    const res = await request(app).get('/api/templates');
+    
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
+    expect(res.body.data[0]).toHaveProperty('id');
+    expect(res.body.data[0]).toHaveProperty('zones');
+    expect(res.body.data[0]).toHaveProperty('assets');
+  });
+
+  test('POST /api/templates/:id/apply creates zones', async () => {
+    const res = await request(app)
+      .post('/api/templates/1/apply')
+      .send({ layout_id: 1 })
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.zones_created).toBeInstanceOf(Array);
+    expect(res.body.data.zones_created.length).toBeGreaterThan(0);
+  });
+});
+```
+
+### Common Patterns
+
+**Filtering Public vs Private Templates**:
+```typescript
+// Public templates (no auth required)
+const publicTemplates = await service.list({
+  is_public: true,
+  sport_type: 'soccer',
+}, 50);
+
+// User's private templates (auth required)
+const myTemplates = await service.list({
+  created_by: req.user.clerkId,
+}, 50);
+```
+
+**Applying with Conflict Resolution**:
+```typescript
+// Clear existing zones/assets before applying
+await service.applyToLayout(templateId, layoutId, true);
+
+// Merge with existing zones/assets
+await service.applyToLayout(templateId, layoutId, false);
+```
+
+### Best Practices
+
+1. **Always Strip Geometry**: Templates should never include geometry (makes them reusable across different field sizes)
+2. **Validate Layout Permissions**: Ensure user can modify target layout before applying template
+3. **Use Transactions**: Apply template operations should be atomic (all zones/assets or none)
+4. **Pagination Required**: Use cursor pagination for template lists (can grow large)
+5. **Audit Trail**: Log template creation and application for analytics
+
+### Frontend Integration
+
+See `web/src/lib/api.ts` for TypeScript client:
+
+```typescript
+import { templateApi } from '@/lib/api';
+
+// List templates
+const { data, next_cursor } = await templateApi.list({ 
+  sport_type: 'soccer',
+  limit: 20 
+});
+
+// Apply to layout
+const result = await templateApi.applyToLayout(templateId, layoutId, true);
+console.log(`Created ${result.zones_created.length} zones`);
+```
+
+**UI Component**: `web/src/components/templates/TemplateGallery.tsx`
+
+---
+
 ## Resources
 
 - **Objection.js**: https://vincit.github.io/objection.js/

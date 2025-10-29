@@ -219,57 +219,60 @@ export async function seed(knex: Knex): Promise<void> {
   const templates = [
     {
       name: 'Standard Soccer Field',
+      sport_type: 'soccer',
       description: 'Full-size 11v11 soccer pitch with regulation markings',
-      tags: ['soccer', '11v11', 'standard', 'match'],
-      preview_geometry: {
-        zones: [
-          { name: 'Main Pitch', type: 'pitch', area_sqm: 7140 },
-          { name: 'Goal Area', type: 'goal_area', area_sqm: 99 },
-        ],
-        assets: [
-          { name: 'Goal', type: 'goal', count: 2 },
-          { name: 'Corner Flag', type: 'flag', count: 4 },
-        ],
-      },
+      zones_json: JSON.stringify([
+        { name: 'Main Pitch', zone_type: 'pitch', color: '#10b981' },
+        { name: 'Goal Area North', zone_type: 'goal_area', color: '#3b82f6' },
+        { name: 'Goal Area South', zone_type: 'goal_area', color: '#3b82f6' },
+      ]),
+      assets_json: JSON.stringify([
+        { name: 'North Goal', asset_type: 'goal', icon: 'fa-futbol' },
+        { name: 'South Goal', asset_type: 'goal', icon: 'fa-futbol' },
+        { name: 'NW Corner Flag', asset_type: 'flag', icon: 'fa-flag' },
+        { name: 'NE Corner Flag', asset_type: 'flag', icon: 'fa-flag' },
+        { name: 'SW Corner Flag', asset_type: 'flag', icon: 'fa-flag' },
+        { name: 'SE Corner Flag', asset_type: 'flag', icon: 'fa-flag' },
+      ]),
       is_public: true,
-      created_by: 'seed-user-1',
-      usage_count: 15,
+      created_by: null, // No specific user (public template)
     },
     {
       name: 'Training Pitch 7v7',
+      sport_type: 'soccer',
       description: 'Smaller training pitch for 7-a-side games',
-      tags: ['soccer', '7v7', 'training', 'small'],
-      preview_geometry: {
-        zones: [
-          { name: 'Small Pitch', type: 'pitch', area_sqm: 3000 },
-        ],
-        assets: [
-          { name: 'Small Goal', type: 'goal', count: 2 },
-          { name: 'Training Cone', type: 'cone', count: 12 },
-        ],
-      },
+      zones_json: JSON.stringify([
+        { name: 'Small Pitch', zone_type: 'pitch', color: '#10b981' },
+        { name: 'Training Zone', zone_type: 'training_zone', color: '#f59e0b' },
+      ]),
+      assets_json: JSON.stringify([
+        { name: 'Small Goal North', asset_type: 'goal', icon: 'fa-futbol' },
+        { name: 'Small Goal South', asset_type: 'goal', icon: 'fa-futbol' },
+        { name: 'Training Cone 1', asset_type: 'cone', icon: 'fa-cone-striped' },
+        { name: 'Training Cone 2', asset_type: 'cone', icon: 'fa-cone-striped' },
+        { name: 'Training Cone 3', asset_type: 'cone', icon: 'fa-cone-striped' },
+        { name: 'Training Cone 4', asset_type: 'cone', icon: 'fa-cone-striped' },
+      ]),
       is_public: true,
-      created_by: 'seed-user-2',
-      usage_count: 8,
+      created_by: null,
     },
     {
       name: 'Multi-Zone Training Complex',
+      sport_type: 'training',
       description: 'Multiple training zones with drills setup',
-      tags: ['training', 'complex', 'multi-zone', 'drills'],
-      preview_geometry: {
-        zones: [
-          { name: 'Drill Zone A', type: 'training_zone', area_sqm: 500 },
-          { name: 'Drill Zone B', type: 'training_zone', area_sqm: 500 },
-          { name: 'Drill Zone C', type: 'training_zone', area_sqm: 500 },
-        ],
-        assets: [
-          { name: 'Cone', type: 'cone', count: 24 },
-          { name: 'Marker', type: 'marker', count: 16 },
-        ],
-      },
+      zones_json: JSON.stringify([
+        { name: 'Drill Zone A', zone_type: 'training_zone', color: '#f59e0b' },
+        { name: 'Drill Zone B', zone_type: 'training_zone', color: '#f59e0b' },
+        { name: 'Drill Zone C', zone_type: 'training_zone', color: '#f59e0b' },
+      ]),
+      assets_json: JSON.stringify([
+        { name: 'Cone 1', asset_type: 'cone', icon: 'fa-cone-striped' },
+        { name: 'Cone 2', asset_type: 'cone', icon: 'fa-cone-striped' },
+        { name: 'Marker 1', asset_type: 'marker', icon: 'fa-bullseye' },
+        { name: 'Marker 2', asset_type: 'marker', icon: 'fa-bullseye' },
+      ]),
       is_public: false,
-      created_by: 'seed-user-1',
-      usage_count: 3,
+      created_by: null,
     },
   ];
 

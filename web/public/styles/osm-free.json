@@ -1,0 +1,28 @@
+{
+  "version": 8,
+  "name": "OSM Bright Free",
+  "sources": {
+    "openmaptiles": {
+      "type": "vector",
+      "tiles": [
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      "attribution": "© OpenStreetMap contributors"
+    }
+  },
+  "glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f8f4f0"
+      }
+    },
+    {
+      "id": "osm-raster",
+      "type": "raster",
+      "source": "openmaptiles"
+    }
+  ]
+}

@@ -168,6 +168,50 @@ export interface AssetUpdate {
   properties?: Record<string, any>;
 }
 
+// Template types
+export interface TemplateZone {
+  name: string;
+  zone_type: string;
+  color?: string;
+  surface?: string;
+}
+
+export interface TemplateAsset {
+  name: string;
+  asset_type: string;
+  icon?: string;
+  properties?: Record<string, any>;
+}
+
+export interface Template {
+  id: number;
+  created_by: string | null;
+  name: string;
+  sport_type: string | null;
+  description: string | null;
+  zones: TemplateZone[];
+  assets: TemplateAsset[];
+  thumbnail_url: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateCreateFromLayout {
+  layout_id: number;
+  name: string;
+  sport_type?: string;
+  description?: string;
+  thumbnail_url?: string;
+  is_public?: boolean;
+}
+
+export interface TemplateApplyResult {
+  message: string;
+  zones_created: string[];
+  assets_created: string[];
+}
+
 export interface GeoJSON {
   Point: {
     type: 'Point';
@@ -320,6 +364,44 @@ export const assetApi = {
     const response = await apiClient.delete(`/assets/${id}`, {
       headers: { 'If-Match': versionToken },
     });
+    return response.data;
+  },
+};
+
+export const templateApi = {
+  list: async (filters?: {
+    sport_type?: string;
+    is_public?: boolean;
+    created_by?: string;
+    limit?: number;
+    cursor?: string;
+  }) => {
+    const response = await apiClient.get<PaginatedResponse<Template>>('/templates', {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getById: async (id: number | string) => {
+    const response = await apiClient.get<{ data: Template }>(`/templates/${id}`);
+    return response.data.data;
+  },
+
+  createFromLayout: async (data: TemplateCreateFromLayout) => {
+    const response = await apiClient.post<{ data: Template }>('/templates/from-layout', data);
+    return response.data.data;
+  },
+
+  applyToLayout: async (templateId: number | string, layoutId: number, clearExisting = true) => {
+    const response = await apiClient.post<{ data: TemplateApplyResult }>(
+      `/templates/${templateId}/apply`,
+      { layout_id: layoutId, clear_existing: clearExisting }
+    );
+    return response.data.data;
+  },
+
+  delete: async (id: number | string) => {
+    const response = await apiClient.delete(`/templates/${id}`);
     return response.data;
   },
 };

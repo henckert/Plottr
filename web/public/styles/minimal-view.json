@@ -1,0 +1,20 @@
+{
+  "version": 8,
+  "name": "PlotIQ Minimal",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "sources": {
+    "osm": {
+      "type": "vector",
+      "tiles": ["https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "© OpenStreetMap contributors"
+    }
+  },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#fafafa" } },
+    { "id": "water", "type": "fill", "source": "osm", "source-layer": "water", "paint": { "fill-color": "#e7f3fb" } },
+    { "id": "road", "type": "line", "source": "osm", "source-layer": "transportation",
+      "paint": { "line-color": "#ffffff", "line-width": ["interpolate",["linear"],["zoom"],5,0.2,16,6] } }
+  ]
+}

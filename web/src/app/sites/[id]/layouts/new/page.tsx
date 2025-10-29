@@ -10,7 +10,7 @@ import { useCreateLayout } from '@/hooks/useLayouts';
 export default function CreateLayoutPage() {
   const params = useParams();
   const router = useRouter();
-  const siteId = params.siteId as string;
+  const siteId = params.id as string;
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');

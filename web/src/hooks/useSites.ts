@@ -188,20 +188,58 @@ export function useDeleteSite() {
 export interface GeocodeFeature {
   center: [number, number]; // [longitude, latitude]
   place_name: string;
+  context?: Array<{ id: string; text: string }>;
 }
 
 export interface GeocodeResponse {
   features: GeocodeFeature[];
 }
 
+interface NominatimResult {
+  lat: number;
+  lng: number;
+  displayName: string;
+  address: {
+    line1?: string;
+    city?: string;
+    county?: string;
+    postcode?: string;
+    country?: string;
+    country_code?: string;
+  };
+}
+
 export function useGeocode() {
   return useMutation({
-    mutationFn: async (query: string) => {
-      const response = await apiClient.post<GeocodeResponse>('/geocoding/forward', {
-        query,
-        limit: 1,
+    mutationFn: async ({ query, countryCode }: { query: string; countryCode?: string }) => {
+      // Call Nominatim backend endpoint (GET with query params)
+      const params: Record<string, string> = {
+        q: query,
+        limit: '5',
+      };
+      
+      if (countryCode) {
+        params.country = countryCode;
+      }
+
+      const response = await apiClient.get<{ data: NominatimResult[] }>('/geocode/search', {
+        params,
       });
-      return response.data;
+      
+      // Transform Nominatim response to Mapbox-compatible format
+      const features: GeocodeFeature[] = response.data.data.map((result) => ({
+        center: [result.lng, result.lat],
+        place_name: result.displayName,
+        context: [
+          { id: 'locality', text: result.address.city || '' },
+          { id: 'region', text: result.address.county || '' },
+          { id: 'postcode', text: result.address.postcode || '' },
+          { id: 'country', text: result.address.country || '' },
+          { id: 'country_code', text: result.address.country_code || '' },
+        ],
+      }));
+
+      return { features };
     },
   });
 }

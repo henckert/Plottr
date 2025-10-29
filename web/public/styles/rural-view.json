@@ -1,0 +1,50 @@
+{
+  "version": 8,
+  "name": "PlotIQ Rural View",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "sources": {
+    "osm": {
+      "type": "vector",
+      "tiles": ["https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "© OpenStreetMap contributors"
+    }
+  },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#f8f8f8" } },
+    { "id": "water", "type": "fill", "source": "osm", "source-layer": "water", "paint": { "fill-color": "#cfe7f5" } },
+    {
+      "id": "landuse",
+      "type": "fill",
+      "source": "osm",
+      "source-layer": "landuse",
+      "paint": {
+        "fill-color": [
+          "match", ["get","class"],
+          "farmland", "#eaf6e0",
+          "grass", "#dff0d8",
+          "forest", "#cbe5c7",
+          "residential", "#f4f4f4",
+          "industrial", "#ededed",
+          "#efefef"
+        ],
+        "fill-opacity": 0.95
+      }
+    },
+    { "id": "building", "type": "fill", "source": "osm", "source-layer": "building",
+      "paint": { "fill-color": "rgba(0,0,0,0)", "fill-outline-color": "#bfbfbf" } },
+    { "id": "track", "type": "line", "source": "osm", "source-layer": "transportation",
+      "filter": ["in","class","track","path"],
+      "paint": { "line-color": "#d0d0d0", "line-width": ["interpolate",["linear"],["zoom"],10,0.3,16,2] } },
+    { "id": "road", "type": "line", "source": "osm", "source-layer": "transportation",
+      "paint": { "line-color": "#ffffff", "line-width": ["interpolate",["linear"],["zoom"],5,0.4,16,7] } },
+    { "id": "road-outline", "type": "line", "source": "osm", "source-layer": "transportation",
+      "paint": { "line-color": "#c7c7c7", "line-width": ["interpolate",["linear"],["zoom"],5,0.6,16,9] } },
+    { "id": "waterway", "type": "line", "source": "osm", "source-layer": "waterway",
+      "paint": { "line-color": "#b6d8ee", "line-width": ["interpolate",["linear"],["zoom"],10,0.3,16,2] } },
+    { "id": "place-label", "type": "symbol", "source": "osm", "source-layer": "place_label",
+      "layout": { "text-field": "{name}", "text-size": ["interpolate",["linear"],["zoom"],5,10,12,14] },
+      "paint": { "text-color": "#333" } }
+  ]
+}

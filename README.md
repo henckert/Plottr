@@ -1,6 +1,8 @@
-# Plottr: Sports Field Booking Platform
+# PlotIQ: Sports Field Planning & Visualization Platform
 
-A complete, full-stack sports field booking system with a secure REST API backend and modern React frontend. Built with Express.js, PostgreSQL, PostGIS, Next.js, and TypeScript across the entire stack.
+**Map. Plan. Share.** — Design, visualize, and share field layouts in minutes.
+
+A complete, full-stack field planning platform with geospatial capabilities, template system, and real-time collaboration. Built with Express.js, PostgreSQL/PostGIS, Next.js, and TypeScript.
 
 **[Frontend Documentation →](web/README.md)** | **[Backend Docs →](LOCAL_SETUP.md)**
 
@@ -35,6 +37,7 @@ npm run dev
 ### Core Functionality
 - **CRUD Operations**: Full Create, Read, Update, Delete for venues, pitches, and sessions
 - **Resource Management**: Templates for pitch types and sessions
+- **Field Layout Templates**: Rapid field setup with reusable zone/asset configurations (soccer, rugby, training layouts)
 - **Version Control**: Optimistic concurrency control with version tokens
 - **Geospatial Validation**: Real-time polygon validation for pitch boundaries using PostGIS
 - **Pagination**: Cursor-based pagination for efficient large dataset handling

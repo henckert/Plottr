@@ -1,0 +1,29 @@
+{
+  "version": 8,
+  "name": "PlotIQ Greyscale",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "sources": {
+    "osm": {
+      "type": "vector",
+      "tiles": ["https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "© OpenStreetMap contributors"
+    }
+  },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#fafafa" } },
+    { "id": "water", "type": "fill", "source": "osm", "source-layer": "water", "paint": { "fill-color": "#e6e6e6" } },
+    { "id": "landuse", "type": "fill", "source": "osm", "source-layer": "landuse",
+      "paint": { "fill-color": "#efefef", "fill-opacity": 0.9 } },
+    { "id": "building", "type": "fill", "source": "osm", "source-layer": "building",
+      "paint": { "fill-color": "#dcdcdc" } },
+    { "id": "road-outline", "type": "line", "source": "osm", "source-layer": "transportation",
+      "paint": { "line-color": "#bfbfbf", "line-width": ["interpolate",["linear"],["zoom"],5,0.4,16,9] } },
+    { "id": "road", "type": "line", "source": "osm", "source-layer": "transportation",
+      "paint": { "line-color": "#ffffff", "line-width": ["interpolate",["linear"],["zoom"],5,0.2,16,7] } },
+    { "id": "place-label", "type": "symbol", "source": "osm", "source-layer": "place_label",
+      "layout": { "text-field": "{name}", "text-size": ["interpolate",["linear"],["zoom"],5,10,12,14] },
+      "paint": { "text-color": "#555" } }
+  ]
+}

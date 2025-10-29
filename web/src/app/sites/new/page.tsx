@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCreateSite, useGeocode, type GeoPoint, type GeoPolygon } from '@/hooks/useSites';
+import SiteLocationMap from '@/components/map/SiteLocationMap';
 
 export default function CreateSitePage() {
   const router = useRouter();
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markerRef = useRef<maplibregl.Marker | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -23,7 +19,7 @@ export default function CreateSitePage() {
   const [postalCode, setPostalCode] = useState('');
   const [location, setLocation] = useState<GeoPoint | undefined>({
     type: 'Point',
-    coordinates: [-122.4194, 37.7749], // Default: San Francisco
+    coordinates: [-7.6991, 52.3611], // Default: Clonmel, Ireland
   });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [bbox, setBbox] = useState<GeoPolygon | undefined>(undefined); // TODO: Implement boundary drawing
@@ -31,49 +27,31 @@ export default function CreateSitePage() {
   // UI state
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [geocodeCandidates, setGeocodeCandidates] = useState<any[]>([]);
+  const [showCandidates, setShowCandidates] = useState(false);
 
   const createSiteMutation = useCreateSite();
   const geocodeMutation = useGeocode();
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json', // Free demo tiles
-      center: location?.coordinates || [-122.4194, 37.7749],
-      zoom: 12,
-    });
-
-    // Add draggable marker
-    const marker = new maplibregl.Marker({ draggable: true })
-      .setLngLat(location?.coordinates || [-122.4194, 37.7749])
-      .addTo(map);
-
-    // Update location when marker is dragged
-    marker.on('dragend', () => {
-      const lngLat = marker.getLngLat();
-      setLocation({
-        type: 'Point',
-        coordinates: [lngLat.lng, lngLat.lat],
-      });
-    });
-
-    mapRef.current = map;
-    markerRef.current = marker;
-
-    return () => {
-      map.remove();
+  // Helper to get country ISO code from country name
+  const getCountryCode = (countryName: string): string | undefined => {
+    const countryMap: Record<string, string> = {
+      'Ireland': 'ie',
+      'United Kingdom': 'gb',
+      'UK': 'gb',
+      'United States': 'us',
+      'USA': 'us',
     };
-  }, []);
+    return countryMap[countryName];
+  };
 
-  // Update marker position when location changes
-  useEffect(() => {
-    if (markerRef.current && location) {
-      markerRef.current.setLngLat(location.coordinates);
-    }
-  }, [location]);
+  // Handle map marker drag
+  const handleLocationChange = (lat: number, lng: number) => {
+    setLocation({
+      type: 'Point',
+      coordinates: [lng, lat],
+    });
+  };
 
   // Geocode address
   const handleGeocodeAddress = async () => {
@@ -81,37 +59,23 @@ export default function CreateSitePage() {
 
     setIsGeocoding(true);
     setGeocodeError(null);
+    setShowCandidates(false);
 
     try {
-      const result = await geocodeMutation.mutateAsync(address);
+      const countryCode = country ? getCountryCode(country) : undefined;
+      const result = await geocodeMutation.mutateAsync({ 
+        query: address,
+        countryCode 
+      });
       
       if (result.features && result.features.length > 0) {
-        const feature = result.features[0];
-        const newLocation: GeoPoint = {
-          type: 'Point',
-          coordinates: feature.center,
-        };
-
-        setLocation(newLocation);
-
-        // Update map view
-        if (mapRef.current) {
-          mapRef.current.flyTo({
-            center: feature.center,
-            zoom: 15,
-            duration: 1000,
-          });
-        }
-
-        // Parse place name to fill in city/state/country
-        const placeName = feature.place_name;
-        // Example: "123 Main Street, San Francisco, California 94102, United States"
-        // Basic parsing (this could be improved with more sophisticated logic)
-        const parts = placeName.split(',').map((p) => p.trim());
-        if (parts.length >= 2) {
-          setCity(parts[parts.length - 3] || '');
-          setState(parts[parts.length - 2]?.split(' ')[0] || '');
-          setCountry(parts[parts.length - 1] || '');
+        if (result.features.length === 1) {
+          // Only one result, apply it directly
+          selectGeocodeResult(result.features[0]);
+        } else {
+          // Multiple results, show picker
+          setGeocodeCandidates(result.features);
+          setShowCandidates(true);
         }
       } else {
         setGeocodeError('No results found for this address');
@@ -122,6 +86,32 @@ export default function CreateSitePage() {
     } finally {
       setIsGeocoding(false);
     }
+  };
+
+  // Select a geocode result from candidates
+  const selectGeocodeResult = (feature: any) => {
+    const newLocation: GeoPoint = {
+      type: 'Point',
+      coordinates: feature.center,
+    };
+
+    setLocation(newLocation);
+
+    // Parse context from Nominatim geocoding result
+    if (feature.context && feature.context.length > 0) {
+      const locality = feature.context.find((c: any) => c.id === 'locality')?.text || '';
+      const region = feature.context.find((c: any) => c.id === 'region')?.text || '';
+      const postcode = feature.context.find((c: any) => c.id === 'postcode')?.text || '';
+      const countryName = feature.context.find((c: any) => c.id === 'country')?.text || '';
+
+      setCity(locality);
+      setState(region);
+      setPostalCode(postcode);
+      setCountry(countryName);
+    }
+
+    setShowCandidates(false);
+    setGeocodeCandidates([]);
   };
 
   // Submit form
@@ -199,8 +189,7 @@ export default function CreateSitePage() {
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              onBlur={handleGeocodeAddress}
-              placeholder="e.g., 123 Main Street, San Francisco, CA"
+              placeholder="e.g., Whitehorns, Clonmel or Eircode E91 VF83"
               maxLength={500}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -208,26 +197,52 @@ export default function CreateSitePage() {
               type="button"
               onClick={handleGeocodeAddress}
               disabled={!address.trim() || isGeocoding}
+              aria-label="Search for address"
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isGeocoding ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Geocoding...
+                  Searching...
                 </>
               ) : (
                 <>
                   <MapPin className="w-4 h-4" />
-                  Geocode
+                  Go
                 </>
               )}
             </button>
           </div>
+          
+          {/* Geocode Results Picker */}
+          {showCandidates && geocodeCandidates.length > 0 && (
+            <div className="mt-2 border border-gray-300 rounded-lg bg-white shadow-lg max-h-64 overflow-y-auto">
+              <div className="p-2 bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700">
+                Select a location ({geocodeCandidates.length} found):
+              </div>
+              {geocodeCandidates.map((candidate, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => selectGeocodeResult(candidate)}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                >
+                  <div className="font-medium text-gray-900 text-sm">
+                    {candidate.place_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {candidate.center[1].toFixed(5)}°, {candidate.center[0].toFixed(5)}°
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          
           {geocodeError && (
             <p className="text-red-600 text-sm mt-1">{geocodeError}</p>
           )}
           <p className="text-gray-500 text-sm mt-1">
-            Enter an address and click Geocode to auto-fill location details
+            Enter an address or Eircode and click Go to find locations
           </p>
         </div>
 
@@ -298,10 +313,13 @@ export default function CreateSitePage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Location
           </label>
-          <div
-            ref={mapContainer}
-            className="w-full h-96 border border-gray-300 rounded-lg"
-          />
+          <div className="w-full h-96">
+            <SiteLocationMap
+              lat={location?.coordinates[1] ?? 52.3611}
+              lng={location?.coordinates[0] ?? -7.6991}
+              onChange={handleLocationChange}
+            />
+          </div>
           <p className="text-gray-500 text-sm mt-2">
             Drag the marker to adjust the exact location
             {location && (

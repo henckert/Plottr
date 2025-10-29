@@ -1104,6 +1104,536 @@ paths:
         '409':
           $ref: '#/components/responses/VersionConflictError'
 
+  /assets:
+    get:
+      summary: List assets with cursor pagination
+      description: Get paginated list of assets filtered by layout_id, zone_id, or asset_type
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: layout_id
+          required: false
+          schema:
+            type: integer
+          description: Filter assets by layout ID
+        - in: query
+          name: zone_id
+          required: false
+          schema:
+            type: integer
+          description: Filter assets by zone ID
+        - in: query
+          name: asset_type
+          required: false
+          schema:
+            type: string
+            enum: [goal, bench, light, cone, flag, marker, tree, fence, net, scoreboard, water_fountain, trash_bin, camera, other]
+          description: Filter assets by type
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Base64-encoded cursor for pagination
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return (max 100)
+      responses:
+        '200':
+          description: Paginated list of assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                  has_more:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create an asset
+      description: Create a new asset (POINT or LINESTRING geometry only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetCreate'
+      responses:
+        '201':
+          description: Asset created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /assets/{id}:
+    get:
+      summary: Get a single asset
+      description: Retrieve asset by ID
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update an asset
+      description: Update asset with optimistic concurrency control
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetUpdate'
+      responses:
+        '200':
+          description: Asset updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Asset'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+    delete:
+      summary: Delete an asset
+      description: Delete asset with optimistic concurrency control
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          required: true
+          description: Current version_token (UUID) of the resource
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Asset deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/VersionConflictError'
+
+  /share-links:
+    get:
+      summary: List share links with cursor pagination
+      description: Get paginated list of share links for a specific layout
+      tags:
+        - ShareLinks
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: layout_id
+          required: false
+          schema:
+            type: integer
+          description: Filter share links by layout ID
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Base64-encoded cursor for pagination
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return (max 100)
+      responses:
+        '200':
+          description: Paginated list of share links
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShareLink'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                  has_more:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a share link
+      description: Create a new share link for a layout
+      tags:
+        - ShareLinks
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareLinkCreate'
+      responses:
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ShareLink'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /share-links/{id}:
+    get:
+      summary: Get a single share link
+      description: Retrieve share link by ID
+      tags:
+        - ShareLinks
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Share link details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ShareLink'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      summary: Revoke a share link
+      description: Delete share link to revoke public access
+      tags:
+        - ShareLinks
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Share link revoked successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /share/{slug}:
+    get:
+      summary: Public share view (no auth)
+      description: Access a shared layout via public slug (increments view_count)
+      tags:
+        - ShareLinks
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Unique share link slug
+      responses:
+        '200':
+          description: Public layout data with zones and assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      layout:
+                        $ref: '#/components/schemas/Layout'
+                      zones:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Zone'
+                      assets:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Asset'
+                      share_link:
+                        type: object
+                        properties:
+                          slug:
+                            type: string
+                          view_count:
+                            type: integer
+                          expires_at:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          last_accessed_at:
+                            type: string
+                            format: date-time
+                            nullable: true
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '410':
+          description: Share link expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Share link has expired
+                      code:
+                        type: string
+                        example: SHARE_LINK_EXPIRED
+
+  /templates/from-layout:
+    post:
+      summary: Create a template from a layout
+      description: Save current layout as a reusable template
+      tags:
+        - Templates
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateCreateFromLayout'
+      responses:
+        '201':
+          description: Template created from layout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /templates/{id}:
+    get:
+      summary: Get a single template
+      description: Retrieve template by ID
+      tags:
+        - Templates
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      summary: Delete a template
+      description: Delete custom template (only creator can delete)
+      tags:
+        - Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Template deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /templates/{id}/apply:
+    post:
+      summary: Apply a template to a layout
+      description: Apply template zones and assets to an existing layout
+      tags:
+        - Templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Template ID to apply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                layout_id:
+                  type: integer
+                  description: Target layout ID
+                clear_existing:
+                  type: boolean
+                  default: true
+                  description: Clear existing zones/assets before applying template
+              required:
+                - layout_id
+      responses:
+        '200':
+          description: Template applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Template applied successfully
+                      zones_created:
+                        type: array
+                        items:
+                          type: string
+                        example: ['Pitch', 'Goal Area', 'Penalty Box']
+                      assets_created:
+                        type: array
+                        items:
+                          type: string
+                        example: ['Goal Post 1', 'Corner Flag 1', 'Bench']
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1949,3 +2479,244 @@ components:
           type: string
           nullable: true
       description: All fields optional (PATCH semantics)
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        layout_id:
+          type: integer
+          example: 1
+        zone_id:
+          type: integer
+          nullable: true
+          example: 5
+          description: Optional association with a zone
+        name:
+          type: string
+          example: Goal Post 1
+          maxLength: 100
+        asset_type:
+          type: string
+          enum: [goal, bench, light, cone, flag, marker, tree, fence, net, scoreboard, water_fountain, trash_bin, camera, other]
+          example: goal
+        icon:
+          type: string
+          enum: [fa-futbol, fa-basketball, fa-volleyball, fa-baseball, fa-flag, fa-bullseye, fa-chair, fa-lightbulb, fa-tree, fa-cone-striped, fa-water, fa-dumpster, fa-square-parking, fa-restroom, fa-kit-medical, fa-camera, fa-wifi, fa-phone, fa-door-open, fa-fence]
+          nullable: true
+          example: fa-futbol
+          description: FontAwesome icon class
+        geometry:
+          type: object
+          description: GeoJSON Point or LineString geometry (WGS84)
+          nullable: true
+          example:
+            type: Point
+            coordinates: [-122.4194, 37.7749]
+        rotation_deg:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 360
+          example: 45
+          description: Rotation angle in degrees (0-360)
+        properties:
+          type: object
+          nullable: true
+          additionalProperties: true
+          example:
+            height: 2.44
+            width: 7.32
+            material: aluminum
+          description: Arbitrary JSON metadata
+        version_token:
+          type: string
+          format: uuid
+          example: 'b2c3d4e5-f6a7-8901-bcde-f2345678901a'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T12:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T12:00:00.000Z'
+      required:
+        - id
+        - layout_id
+        - name
+        - asset_type
+        - version_token
+        - created_at
+        - updated_at
+
+    AssetCreate:
+      type: object
+      properties:
+        layout_id:
+          type: integer
+          example: 1
+        zone_id:
+          type: integer
+          nullable: true
+          example: 5
+        name:
+          type: string
+          example: New Goal Post
+          maxLength: 100
+        asset_type:
+          type: string
+          enum: [goal, bench, light, cone, flag, marker, tree, fence, net, scoreboard, water_fountain, trash_bin, camera, other]
+          example: goal
+        icon:
+          type: string
+          enum: [fa-futbol, fa-basketball, fa-volleyball, fa-baseball, fa-flag, fa-bullseye, fa-chair, fa-lightbulb, fa-tree, fa-cone-striped, fa-water, fa-dumpster, fa-square-parking, fa-restroom, fa-kit-medical, fa-camera, fa-wifi, fa-phone, fa-door-open, fa-fence]
+          nullable: true
+          example: fa-futbol
+        geometry:
+          type: object
+          description: GeoJSON Point or LineString (Polygon not allowed)
+          nullable: true
+          example:
+            type: Point
+            coordinates: [-122.4194, 37.7749]
+        rotation_deg:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 360
+          example: 45
+        properties:
+          type: object
+          nullable: true
+          additionalProperties: true
+      required:
+        - layout_id
+        - name
+        - asset_type
+
+    AssetUpdate:
+      type: object
+      properties:
+        zone_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+          maxLength: 100
+        asset_type:
+          type: string
+          enum: [goal, bench, light, cone, flag, marker, tree, fence, net, scoreboard, water_fountain, trash_bin, camera, other]
+        icon:
+          type: string
+          enum: [fa-futbol, fa-basketball, fa-volleyball, fa-baseball, fa-flag, fa-bullseye, fa-chair, fa-lightbulb, fa-tree, fa-cone-striped, fa-water, fa-dumpster, fa-square-parking, fa-restroom, fa-kit-medical, fa-camera, fa-wifi, fa-phone, fa-door-open, fa-fence]
+          nullable: true
+        geometry:
+          type: object
+          description: GeoJSON Point or LineString
+          nullable: true
+        rotation_deg:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 360
+        properties:
+          type: object
+          nullable: true
+          additionalProperties: true
+      description: All fields optional (PATCH semantics)
+
+    ShareLink:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        layout_id:
+          type: integer
+          example: 1
+        slug:
+          type: string
+          example: abc123xyz789
+          description: Unique public URL slug
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-11-15T00:00:00.000Z'
+          description: Optional expiration date
+        view_count:
+          type: integer
+          example: 42
+          description: Number of times this link has been accessed
+        last_accessed_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-10-27T14:30:00.000Z'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-10-20T10:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-10-27T14:30:00.000Z'
+      required:
+        - id
+        - layout_id
+        - slug
+        - view_count
+        - created_at
+        - updated_at
+
+    ShareLinkCreate:
+      type: object
+      properties:
+        layout_id:
+          type: integer
+          example: 1
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2025-11-15T00:00:00.000Z'
+          description: Optional expiration date (ISO 8601 format)
+      required:
+        - layout_id
+
+    TemplateCreateFromLayout:
+      type: object
+      properties:
+        layout_id:
+          type: integer
+          example: 1
+          description: Source layout ID to create template from
+        name:
+          type: string
+          example: My Custom Soccer Field
+          maxLength: 100
+        sport_type:
+          type: string
+          nullable: true
+          example: soccer
+          description: Sport category for filtering
+        description:
+          type: string
+          nullable: true
+          example: Full-size soccer field with goals and benches
+          maxLength: 1000
+        thumbnail_url:
+          type: string
+          nullable: true
+          format: uri
+          example: https://example.com/thumbnails/soccer-field.png
+        is_public:
+          type: boolean
+          default: false
+          description: Make template publicly available
+      required:
+        - layout_id
+        - name

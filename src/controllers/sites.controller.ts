@@ -26,15 +26,8 @@ export async function listSites(req: Request, res: Response, next: NextFunction)
     // Parse and validate pagination params
     const cursor = req.query.cursor as string | undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
-    const clubId = req.query.club_id ? Number(req.query.club_id) : undefined;
-
-    // Validate club_id is provided
-    if (!clubId) {
-      return res.status(400).json({
-        error: 'MISSING_CLUB_ID',
-        message: 'club_id query parameter is required',
-      });
-    }
+    // In dev mode (AUTH_REQUIRED=false), club_id is optional - defaults to 1 for demo
+    const clubId = req.query.club_id ? Number(req.query.club_id) : 1;
 
     let params;
     try {

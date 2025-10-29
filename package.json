@@ -1,6 +1,8 @@
 {
   "name": "plottr-backend",
+  "displayName": "PlotIQ API",
   "version": "0.1.0",
+  "description": "PlotIQ backend API - Field planning and visualization platform",
   "private": true,
   "type": "commonjs",
   "scripts": {

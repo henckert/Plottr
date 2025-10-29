@@ -11,8 +11,10 @@ import sites from './sites.routes';
 import zones from './zones.routes';
 import assets from './assets.routes';
 import usage from './usage.routes';
+import shareLinks from './share-links.routes';
 import createGeometryRoutes from './geometry.routes';
 import test from './test.routes';
+import migration from './migration.routes';
 
 const router = Router();
 
@@ -23,11 +25,13 @@ router.use('/layouts', layouts);
 router.use('/sites', sites);
 router.use('/zones', zones);
 router.use('/assets', assets);
+router.use('/share-links', shareLinks);
 router.use('/venues', venues);
 router.use('/pitches', pitches);
 router.use('/sessions', sessions);
 router.use('/geocode', geocode);
 router.use('/usage', usage);
+router.use('/migration', migration);
 router.use('/geometries', createGeometryRoutes());
 
 // Test-only routes (only available when E2E=true)

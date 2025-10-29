@@ -9,6 +9,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 import { useLayout } from '@/hooks/useLayouts';
+import { useSite } from '@/hooks/useSites';
 import { useZones, useDeleteZone } from '@/hooks/useZones';
 import { MapCanvasWithDraw } from '@/components/editor/MapCanvasWithDraw';
 import { LayoutHeader } from '@/components/editor/LayoutHeader';
@@ -26,6 +27,7 @@ export default function LayoutEditorPage() {
 
   // Data fetching
   const { data: layout, isLoading: layoutLoading, error: layoutError } = useLayout(layoutId);
+  const { data: site, isLoading: siteLoading } = useSite(layout?.site_id ?? null);
   const { data: zonesResponse, isLoading: zonesLoading } = useZones({
     layoutId,
     limit: 100,
@@ -109,7 +111,7 @@ export default function LayoutEditorPage() {
   }, [selectedZone, isEditMode, handleDeleteZone]);
 
   // Loading state
-  if (layoutLoading || zonesLoading) {
+  if (layoutLoading || zonesLoading || siteLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -160,6 +162,12 @@ export default function LayoutEditorPage() {
           selectedZoneId={selectedZoneId}
           onZoneClick={handleZoneClick}
           isLoading={zonesLoading}
+          center={
+            site?.location?.coordinates
+              ? [site.location.coordinates[0], site.location.coordinates[1]]
+              : undefined
+          }
+          zoom={site?.location ? 16 : 15}
         />
 
         {/* Zone Detail Panel (when zone selected and not editing) */}

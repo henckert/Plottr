@@ -1,10 +1,12 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  release:
+    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -110,3 +112,94 @@ jobs:
               repo: context.repo.repo,
               body: comment
             });
+
+  # OpenAPI Spec Validation
+  openapi-validation:
+    name: Validate OpenAPI Spec
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install OpenAPI validator
+        run: npm install -g @apidevtools/swagger-cli
+
+      - name: Validate OpenAPI spec
+        run: swagger-cli validate openapi/plottr.yaml
+
+  # Frontend Type Checking & Build
+  frontend-build:
+    name: Frontend Build & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: TypeScript type checking
+        working-directory: ./web
+        run: npm run type-check
+
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+
+  # Deploy API Docs to GitHub Pages (main branch only)
+  deploy-api-docs:
+    name: Deploy API Docs to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [test, openapi-validation]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create docs directory
+        run: |
+          mkdir -p _site
+          cp public/api-docs.html _site/index.html
+          cp openapi/plottr.yaml _site/openapi.yaml
+          cp docs/API_REFERENCE.md _site/API_REFERENCE.md
+          cp docs/USER_GUIDE_*.md _site/ 2>/dev/null || true
+          echo "# Plottr API Documentation" > _site/README.md
+          echo "" >> _site/README.md
+          echo "Interactive API docs: [Open Swagger UI](./index.html)" >> _site/README.md
+          echo "" >> _site/README.md
+          echo "API Reference: [API_REFERENCE.md](./API_REFERENCE.md)" >> _site/README.md
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -5,11 +5,15 @@ module.exports = {
   maxWorkers: 1,
   globalSetup: '<rootDir>/tests/setup/db.ts',
   globalTeardown: '<rootDir>/tests/setup/teardown.ts',
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json'
-    }
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },
   setupFiles: ['<rootDir>/tests/setup/env.ts'],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.mapbox.mock.js']
+  setupFilesAfterEnv: [
+    '<rootDir>/tests/setup/jest.mapbox.mock.js',
+    '<rootDir>/tests/setup/after-env.ts'
+  ]
 };

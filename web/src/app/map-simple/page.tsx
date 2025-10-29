@@ -24,7 +24,7 @@ export default function SimpleMapPage() {
     if (!mapContainer.current) {
       addLog('ERROR: mapContainer.current is null!');
       setStatus('Error: Container not found');
-      return;
+      return; // No cleanup needed if map not created
     }
 
     addLog('Container found, creating map...');
@@ -77,6 +77,7 @@ export default function SimpleMapPage() {
       const errorMsg = error instanceof Error ? error.message : String(error);
       addLog('EXCEPTION: ' + errorMsg);
       setStatus('Exception: ' + errorMsg);
+      return undefined; // Explicit return for consistency
     }
   }, []);
 

@@ -82,8 +82,9 @@ export function GridOverlay({
           },
         });
       }
+    };
 
-      if (map.loaded()) {
+    if (map.loaded()) {
       initializeGrid();
     } else {
       map.once('load', initializeGrid);
