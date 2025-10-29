@@ -22,7 +22,7 @@ export function Toolbar() {
   );
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-slate-900/80 border border-white/10 rounded-2xl p-2 backdrop-blur shadow-xl">
+    <div className="flex gap-2 bg-slate-900/80 border border-white/10 rounded-2xl p-2 backdrop-blur shadow-xl">
       <ToolButton id="select" label="Select" icon={MousePointer2} />
       <ToolButton id="draw" label="Draw" icon={Pencil} />
       <ToolButton id="measure" label="Measure" icon={Ruler} />
