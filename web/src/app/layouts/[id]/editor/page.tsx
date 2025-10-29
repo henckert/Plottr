@@ -32,13 +32,12 @@ export default function LayoutEditorPage() {
   const layoutId = Number(params.id);
 
   // Editor store
-  const { openQuickStart, snapEnabled } = useEditorStore();
+  const { openQuickStart, snapEnabled, showRuralPanel, setShowRuralPanel } = useEditorStore();
 
   // State
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
-  const [showRuralPanel, setShowRuralPanel] = useState(true);
 
   // Data fetching
   const { data: layout, isLoading: layoutLoading, error: layoutError } = useLayout(layoutId);
@@ -53,13 +52,17 @@ export default function LayoutEditorPage() {
   const zones = zonesResponse?.data || [];
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
 
-  // Map state (after site data is available)
-  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(
-    site?.location?.coordinates
-      ? [site.location.coordinates[0], site.location.coordinates[1]]
-      : undefined
-  );
-  const [mapZoom, setMapZoom] = useState<number>(site?.location ? 16 : 15);
+  // Map state - default to site location or Dublin, Ireland
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.2603, 53.3498]);
+  const [mapZoom, setMapZoom] = useState<number>(15);
+
+  // Update map center when site data loads
+  useEffect(() => {
+    if (site?.location?.coordinates) {
+      setMapCenter([site.location.coordinates[0], site.location.coordinates[1]]);
+      setMapZoom(16);
+    }
+  }, [site]);
 
   // Handlers for QuickStart and EmptyState
   const handleQuickStartComplete = useCallback(() => {

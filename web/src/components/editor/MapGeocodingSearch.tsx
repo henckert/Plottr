@@ -52,24 +52,24 @@ export function MapGeocodingSearch({ onResultSelect, className = '' }: MapGeocod
     const timeoutId = setTimeout(async () => {
       setIsLoading(true);
       try {
-        // Call your backend geocoding endpoint
+        // Call backend Nominatim geocoding endpoint
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/geocode?q=${encodeURIComponent(query)}&limit=5`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/geocode/search?q=${encodeURIComponent(query)}&limit=5&country=ie`
         );
         
         if (!response.ok) {
           throw new Error('Geocoding request failed');
         }
 
-        const data = await response.json();
+        const json = await response.json();
+        const data = json.data || [];
         
-        // Transform Mapbox response to our interface
-        const features = data.features || [];
-        const transformedResults: GeocodingResult[] = features.map((f: any) => ({
-          id: f.id,
-          place_name: f.place_name,
-          center: f.center,
-          bbox: f.bbox,
+        // Transform Nominatim response to our interface
+        const transformedResults: GeocodingResult[] = data.map((item: any) => ({
+          id: `${item.lat}_${item.lng}`,
+          place_name: item.displayName,
+          center: [item.lng, item.lat],
+          bbox: undefined,
         }));
 
         setResults(transformedResults);

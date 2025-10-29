@@ -1,10 +1,10 @@
 // web/src/components/editor/Toolbar.tsx
 "use client";
 import { useEditorStore } from "@/store/editor.store";
-import { MousePointer2, Pencil, Ruler, Move, Grid3x3, CopyPlus, GripVertical } from "lucide-react";
+import { MousePointer2, Pencil, Ruler, Move, Grid3x3, CopyPlus, GripVertical, Mountain } from "lucide-react";
 
 export function Toolbar() {
-  const { activeTool, setTool, toggleUnits, unitSystem, toggleSnap, snapEnabled } = useEditorStore();
+  const { activeTool, setTool, toggleUnits, unitSystem, toggleSnap, snapEnabled, showRuralPanel, setShowRuralPanel } = useEditorStore();
 
   const ToolButton = ({ id, label, icon: Icon }: { id: any; label: string; icon: any }) => (
     <button
@@ -55,6 +55,18 @@ export function Toolbar() {
       >
         <CopyPlus className="w-4 h-4" />
         {unitSystem === "metric" ? "Metric" : "Imperial"}
+      </button>
+
+      <button
+        className={`px-4 py-2.5 rounded-lg border transition-all flex items-center gap-2 ${
+          showRuralPanel
+            ? "border-emerald-400 bg-emerald-500/10 text-white"
+            : "border-white/10 hover:bg-white/5 text-white/80"
+        }`}
+        onClick={() => setShowRuralPanel(!showRuralPanel)}
+        title="Toggle Rural Mode panel"
+      >
+        <Mountain className="w-4 h-4" />
       </button>
     </div>
   );

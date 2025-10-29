@@ -2,15 +2,13 @@
 "use client";
 import { useEditorStore } from "@/store/editor.store";
 import { Mountain, Eye, X, GripVertical } from "lucide-react";
-import { useState } from "react";
 
 interface RuralModePanelProps {
   onClose: () => void;
 }
 
 export function RuralModePanel({ onClose }: RuralModePanelProps) {
-  const { ruralMode, setRuralMode } = useEditorStore();
-  const [opacity, setOpacity] = useState(60);
+  const { ruralMode, setRuralMode, ruralOpacity, setRuralOpacity } = useEditorStore();
 
   return (
     <div className="rounded-2xl bg-slate-900/80 border border-white/10 p-4 text-white backdrop-blur shadow-xl w-72">
@@ -54,11 +52,11 @@ export function RuralModePanel({ onClose }: RuralModePanelProps) {
             type="range"
             min="0"
             max="100"
-            value={opacity}
-            onChange={(e) => setOpacity(Number(e.target.value))}
+            value={ruralOpacity}
+            onChange={(e) => setRuralOpacity(Number(e.target.value))}
             className="w-full accent-emerald-500"
           />
-          <div className="text-xs text-white/50 text-right">{opacity}%</div>
+          <div className="text-xs text-white/50 text-right">{ruralOpacity}%</div>
         </div>
       )}
 
