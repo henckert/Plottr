@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Pencil, Trash2, Square, Hand, X } from 'lucide-react';
+import { Trash2, Square, Hand, X } from 'lucide-react';
 
 export type DrawMode = 'none' | 'draw_polygon' | 'simple_select' | 'direct_select';
 
@@ -53,17 +53,6 @@ export function DrawToolbar({
         <span className="hidden sm:inline">Select</span>
       </button>
 
-      {/* Edit Mode */}
-      <button
-        onClick={() => onModeChange('direct_select')}
-        disabled={disabled || !hasSelection}
-        className={`${buttonBaseClass} ${currentMode === 'direct_select' ? activeClass : inactiveClass}`}
-        title="Edit vertices (Drag vertices, click midpoints to add points)"
-      >
-        <Pencil className="w-4 h-4" />
-        <span className="hidden sm:inline">Edit Vertices</span>
-      </button>
-
       {/* Divider */}
       <div className="w-px h-8 bg-gray-300" />
 
@@ -97,7 +86,6 @@ export function DrawToolbar({
         <span>
           {currentMode === 'draw_polygon' && 'Drawing...'}
           {currentMode === 'simple_select' && 'Select Mode'}
-          {currentMode === 'direct_select' && 'Edit Mode'}
           {currentMode === 'none' && 'Ready'}
         </span>
       </div>

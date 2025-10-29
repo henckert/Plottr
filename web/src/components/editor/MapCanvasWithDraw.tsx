@@ -210,8 +210,9 @@ export function MapCanvasWithDraw({
         setCurrentMeasurements({});
         break;
       case 'direct_select':
-        // MapboxDraw uses 'direct_select' but TS types are incomplete
-        (draw.current as any).changeMode('direct_select');
+        // direct_select requires a featureId - default to simple_select instead
+        // (direct_select is only used when editing a specific zone)
+        draw.current.changeMode('simple_select');
         setIsDrawing(false);
         setCurrentMeasurements({});
         break;
