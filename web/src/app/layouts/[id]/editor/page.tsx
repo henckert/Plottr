@@ -226,8 +226,8 @@ export default function LayoutEditorPage() {
           {/* Grid Overlay (when snap enabled) */}
           {snapEnabled && <GridOverlay />}
 
-          {/* Toolbar (top-right floating) */}
-          <div className="absolute top-4 right-4 z-10">
+          {/* Toolbar (top-right floating, below map controls) */}
+          <div className="absolute top-16 right-4 z-10">
             <Toolbar />
           </div>
 
