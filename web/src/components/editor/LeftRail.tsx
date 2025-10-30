@@ -2,8 +2,16 @@
 "use client";
 import { useState } from "react";
 import { Shapes, Layers, FileText, Settings2 } from "lucide-react";
+import TemplatesPanel from "./TemplatesPanel";
+import type { PitchTemplate } from "@/types/template.types";
 
-export function LeftRail() {
+interface LeftRailProps {
+  intent?: string;
+  subtype?: string;
+  onSelectTemplate?: (template: PitchTemplate) => void;
+}
+
+export function LeftRail({ intent, subtype, onSelectTemplate }: LeftRailProps) {
   const [tab, setTab] = useState<"templates" | "shapes" | "layers" | "props">("templates");
 
   const tabs = [
@@ -12,6 +20,15 @@ export function LeftRail() {
     { id: "layers", label: "Layers", icon: Layers },
     { id: "props", label: "Props", icon: Settings2 },
   ] as const;
+
+  const handleSelectTemplate = (template: PitchTemplate) => {
+    console.log('Template selected:', template);
+    if (onSelectTemplate) {
+      onSelectTemplate(template);
+    } else {
+      alert(`Template selected: ${template.name}\nThis will be integrated with the map editor.`);
+    }
+  };
 
   return (
     <div className="absolute top-20 left-4 z-30 w-72 rounded-2xl bg-slate-900/80 border border-white/10 backdrop-blur shadow-xl overflow-hidden">
@@ -39,22 +56,11 @@ export function LeftRail() {
       {/* Tab Content */}
       <div className="p-4 text-white/80 text-sm max-h-[600px] overflow-y-auto">
         {tab === "templates" && (
-          <div>
-            <h4 className="font-semibold mb-3 text-white">Pitch Templates</h4>
-            <p className="text-white/60 text-xs mb-3">Select a preset pitch to insert</p>
-            {/* TODO: populate with template cards */}
-            <div className="space-y-2">
-              {["GAA Full Pitch", "Rugby 15s", "Soccer 11-a-side", "Hockey Field"].map((name) => (
-                <button
-                  key={name}
-                  className="w-full text-left px-3 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"
-                >
-                  <div className="font-medium text-white text-sm">{name}</div>
-                  <div className="text-white/50 text-xs">Standard dimensions</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <TemplatesPanel
+            intent={intent as any}
+            subtype={subtype}
+            onSelectTemplate={handleSelectTemplate}
+          />
         )}
 
         {tab === "shapes" && (

@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import type { IntentType } from '@/components/wizard/IntentSelectionStep';
+import { getToolPreset } from '@/config/toolPresets';
+import { useEditorStore } from '@/store/editor.store';
 
 interface CreateLayoutFromIntentParams {
   intent: IntentType;
@@ -32,11 +34,13 @@ interface Layout {
  * Workflow:
  * 1. If location provided → create/find site with that location
  * 2. Create draft layout with intent metadata
- * 3. Invalidate layouts query to refresh recent plans
- * 4. Return layout for navigation
+ * 3. Apply tool preset to editor store
+ * 4. Invalidate layouts query to refresh recent plans
+ * 5. Return layout for navigation
  */
 export function useCreateLayoutFromIntent() {
   const queryClient = useQueryClient();
+  const applyToolPreset = useEditorStore((state) => state.applyToolPreset);
 
   return useMutation({
     mutationFn: async (params: CreateLayoutFromIntentParams): Promise<Layout> => {
@@ -83,6 +87,10 @@ export function useCreateLayoutFromIntent() {
         status: 'draft',
         metadata,
       });
+
+      // Step 3: Apply tool preset for the intent/subtype
+      const toolPreset = getToolPreset(intent, subtype);
+      applyToolPreset(toolPreset);
 
       return layoutResponse.data.data;
     },
