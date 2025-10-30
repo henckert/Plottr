@@ -24,6 +24,7 @@ export interface Layout {
   name: string;
   description: string | null;
   is_published: boolean;
+  metadata: Record<string, any> | null; // Intent metadata: { intent, subtype }
   version_token: string;
   created_by: string;
   created_at: string; // ISO timestamp
@@ -35,6 +36,7 @@ export interface LayoutCreateInput {
   name: string;
   description?: string;
   is_published?: boolean;
+  metadata?: Record<string, any>; // Intent metadata
   created_by: string;
 }
 
@@ -42,6 +44,7 @@ export interface LayoutUpdateInput {
   name?: string;
   description?: string | null;
   is_published?: boolean;
+  metadata?: Record<string, any> | null; // Intent metadata
 }
 
 // ===========================
@@ -60,6 +63,7 @@ export class LayoutsRepository {
       name: data.name,
       description: data.description || null,
       is_published: data.is_published ?? false,
+      metadata: data.metadata ? JSON.stringify(data.metadata) : null,
       created_by: data.created_by,
       version_token: knex.raw('gen_random_uuid()'),
     };
@@ -141,6 +145,9 @@ export class LayoutsRepository {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.is_published !== undefined) updateData.is_published = data.is_published;
+    if (data.metadata !== undefined) {
+      updateData.metadata = data.metadata ? JSON.stringify(data.metadata) : null;
+    }
     
     const count = await knex('layouts')
       .where({ id })
@@ -224,6 +231,7 @@ export class LayoutsRepository {
       name: row.name,
       description: row.description || null,
       is_published: row.is_published,
+      metadata: row.metadata || null, // JSONB is auto-parsed by pg driver
       version_token: row.version_token,
       created_by: row.created_by,
       created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
