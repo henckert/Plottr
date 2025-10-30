@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { RotateCw, Maximize2, RotateCcw } from "lucide-react";
 import { useEditorStore } from "@/store/editor.store";
+import { trackRotation } from "@/lib/analytics";
 
 interface TransformControlsProps {
   selectedFeature?: {
@@ -65,12 +66,15 @@ export function TransformControls({ selectedFeature, onRotate, onResize }: Trans
   const handleRotationSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     applyRotation(value);
+    trackRotation('slider', value, rotationSnapEnabled);
   };
 
   const handleQuickRotate = (delta: number) => {
     const current = parseFloat(rotation) || 0;
     const step = rotationSnapEnabled ? rotationSnap : 5;
-    applyRotation(current + (delta * step));
+    const newRotation = current + (delta * step);
+    applyRotation(newRotation);
+    trackRotation('quick_button', newRotation, rotationSnapEnabled);
   };
 
   const handleApplyTransform = () => {

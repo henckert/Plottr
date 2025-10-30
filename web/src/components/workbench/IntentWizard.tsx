@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import IntentSelectionStep, { type IntentType } from '../wizard/IntentSelectionStep';
@@ -8,6 +8,7 @@ import SubtypeSelectionStep from '../wizard/SubtypeSelectionStep';
 import LocationInputStep from '../wizard/LocationInputStep';
 import MapPickerModal from '../wizard/MapPickerModal';
 import { useCreateLayoutFromIntent } from '@/hooks/useCreateLayoutFromIntent';
+import { trackEvent, trackWizardStep } from '@/lib/analytics';
 
 interface IntentWizardProps {
   onClose: () => void;
@@ -34,10 +35,18 @@ export default function IntentWizard({ onClose }: IntentWizardProps) {
 
   const createLayoutMutation = useCreateLayoutFromIntent();
 
+  // Track wizard opened
+  useEffect(() => {
+    trackEvent('wizard_opened');
+  }, []);
+
   // Determine if we should skip step 2 (for custom intent)
   const shouldSkipStep2 = selectedIntent === 'custom';
 
   const handleNext = () => {
+    // Track step completion
+    trackWizardStep(currentStep, selectedIntent || undefined, selectedSubtype || undefined);
+
     if (currentStep === 1 && shouldSkipStep2) {
       setCurrentStep(3);
     } else if (currentStep < 3) {
@@ -63,6 +72,20 @@ export default function IntentWizard({ onClose }: IntentWizardProps) {
         subtype: selectedSubtype || undefined,
         location: location || undefined,
         address: address || undefined,
+      });
+
+      // Track wizard completion
+      trackEvent('wizard_completed', {
+        intent: selectedIntent,
+        subtype: selectedSubtype,
+        hasLocation: !!location,
+        layoutId: layout.id,
+      });
+
+      trackEvent('layout_created', {
+        intent: selectedIntent,
+        subtype: selectedSubtype,
+        layoutId: layout.id,
       });
 
       // Navigate to editor with intent context
@@ -122,7 +145,10 @@ export default function IntentWizard({ onClose }: IntentWizardProps) {
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={() => {
+                trackEvent('wizard_cancelled', { step: currentStep, intent: selectedIntent });
+                onClose();
+              }}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
@@ -148,7 +174,10 @@ export default function IntentWizard({ onClose }: IntentWizardProps) {
             {currentStep === 1 && (
               <IntentSelectionStep
                 selectedIntent={selectedIntent}
-                onSelectIntent={setSelectedIntent}
+                onSelectIntent={(intent) => {
+                  setSelectedIntent(intent);
+                  trackEvent('intent_selected', { intent });
+                }}
               />
             )}
 
@@ -156,7 +185,10 @@ export default function IntentWizard({ onClose }: IntentWizardProps) {
               <SubtypeSelectionStep
                 intent={selectedIntent}
                 selectedSubtype={selectedSubtype}
-                onSelectSubtype={setSelectedSubtype}
+                onSelectSubtype={(subtype) => {
+                  setSelectedSubtype(subtype);
+                  trackEvent('template_selected', { intent: selectedIntent, template: subtype });
+                }}
               />
             )}
 

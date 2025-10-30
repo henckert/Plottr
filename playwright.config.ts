@@ -17,7 +17,7 @@ export default defineConfig({
   projects: [
     {
       name: 'ui-e2e',
-      testMatch: '**/ui.spec.ts',
+      testMatch: ['**/ui.spec.ts', '**/workbench.spec.ts', '**/intent-wizard.spec.ts', '**/editor.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://127.0.0.1:3000',

@@ -18,6 +18,7 @@ import { QuickStartWizard } from '@/components/editor/QuickStartWizard';
 import { Toolbar } from '@/components/editor/Toolbar';
 import { BottomStatus } from '@/components/editor/BottomStatus';
 import { LeftRail } from '@/components/editor/LeftRail';
+import { trackEvent, trackRotation, trackSave } from '@/lib/analytics';
 import { CommandPalette } from '@/components/editor/CommandPalette';
 import { RuralModePanel } from '@/components/editor/RuralModePanel';
 import { EmptyState } from '@/components/editor/EmptyState';
@@ -63,6 +64,13 @@ export default function LayoutEditorPage() {
   // Map state - default to site location or Dublin, Ireland
   const [mapCenter, setMapCenter] = useState<[number, number]>([-6.2603, 53.3498]);
   const [mapZoom, setMapZoom] = useState<number>(15);
+
+  // Track editor opened
+  useEffect(() => {
+    if (layout) {
+      trackEvent('layout_editor_opened', { layoutId: layout.id, siteId: layout.site_id });
+    }
+  }, [layout]);
 
   // Update map center when site data loads
   useEffect(() => {
@@ -153,6 +161,8 @@ export default function LayoutEditorPage() {
     }
 
     console.log('[Manual Save] Triggered by user');
+    trackSave('button', true);
+    
     // TODO: Implement actual save logic
     // For now, this is a placeholder that simulates saving
     setSaveStatus('saving');
@@ -178,6 +188,7 @@ export default function LayoutEditorPage() {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         handleManualSave();
+        trackSave('shortcut', true);
         return;
       }
 
@@ -198,6 +209,7 @@ export default function LayoutEditorPage() {
           const newRotation = ((currentRotation - step) % 360 + 360) % 360;
           // TODO: Update zone rotation via mutation
           console.log(`Rotate CCW: ${currentRotation}° → ${newRotation}°`);
+          trackRotation('keyboard', newRotation, rotationSnapEnabled);
           setHasUnsavedChanges(true);
           setSaveStatus('unsaved');
         }
@@ -214,6 +226,7 @@ export default function LayoutEditorPage() {
           const newRotation = (currentRotation + step) % 360;
           // TODO: Update zone rotation via mutation
           console.log(`Rotate CW: ${currentRotation}° → ${newRotation}°`);
+          trackRotation('keyboard', newRotation, rotationSnapEnabled);
           setHasUnsavedChanges(true);
           setSaveStatus('unsaved');
         }

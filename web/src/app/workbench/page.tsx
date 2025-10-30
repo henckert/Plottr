@@ -1,12 +1,18 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import QuickStartPanel from '@/components/workbench/QuickStartPanel';
 import RecentPlansPanel from '@/components/workbench/RecentPlansPanel';
 import MigrationBanner from '@/components/workbench/MigrationBanner';
 import { Loader2 } from 'lucide-react';
+import { trackPageView } from '@/lib/analytics';
 
 export default function WorkbenchPage() {
+  // Track page view
+  useEffect(() => {
+    trackPageView('workbench');
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Migration banner for users coming from /sites or /layouts */}
