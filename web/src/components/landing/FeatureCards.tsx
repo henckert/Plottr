@@ -7,7 +7,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { MapPin, Ruler, ClipboardList, CalendarDays, ChevronRight } from "lucide-react";
+import { MapPin, ClipboardList, CalendarDays, ChevronRight } from "lucide-react";
 
 type CardDef = {
   title: string;
@@ -22,22 +22,13 @@ type CardDef = {
 
 const CARDS: CardDef[] = [
   {
-    title: "Sites",
-    desc: "Map your facilities in minutes.",
-    href: "/sites",
+    title: "Workbench",
+    desc: "Create a new plan or resume one.",
+    href: "/workbench",
     icon: MapPin,
     accentFrom: "from-sky-400/20",
     accentTo: "to-blue-600/20",
-    testId: "card-sites",
-  },
-  {
-    title: "Layouts",
-    desc: "Draw pitches and safe zones.",
-    href: "/layouts",
-    icon: Ruler,
-    accentFrom: "from-emerald-400/20",
-    accentTo: "to-teal-600/20",
-    testId: "card-layouts",
+    testId: "card-workbench",
   },
   {
     title: "Templates",
@@ -72,7 +63,7 @@ export default function FeatureCards() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 md:py-14">
         <h2 id="features-heading" className="sr-only">Key sections</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {CARDS.map((c, i) => (
             <Card key={c.title} def={c} delay={i * 0.05} />
           ))}
