@@ -311,13 +311,13 @@ export default function LayoutEditorPage() {
           {/* Grid Overlay (when snap enabled) */}
           {snapEnabled && <GridOverlay />}
 
-          {/* Location Search Bar (top-left) */}
-          <div className="absolute top-4 left-4 z-10 w-80">
+          {/* Location Search Bar (top-left, respects safe zones) */}
+          <div className="absolute z-10" style={{ top: '16px', left: '16px', width: '320px' }}>
             <MapGeocodingSearch onResultSelect={handleGeocodingResult} />
           </div>
 
-          {/* Toolbar (top-right floating, below map controls) */}
-          <div className="absolute top-16 right-4 z-10">
+          {/* Toolbar (top-right, below map navigation controls) */}
+          <div className="absolute z-10" style={{ top: '156px', right: '16px' }}>
             <DraggablePanel 
               defaultPosition={{ x: 0, y: 0 }}
               storageKey="editor-toolbar-position"
@@ -330,9 +330,9 @@ export default function LayoutEditorPage() {
             </DraggablePanel>
           </div>
 
-          {/* Rural Mode Panel (bottom-right floating) */}
+          {/* Rural Mode Panel (bottom-right, above map controls) */}
           {showRuralPanel && (
-            <div className="absolute bottom-20 right-4 z-10">
+            <div className="absolute z-10" style={{ bottom: '56px', right: '16px' }}>
               <DraggablePanel
                 defaultPosition={{ x: 0, y: 0 }}
                 storageKey="editor-rural-panel-position"
