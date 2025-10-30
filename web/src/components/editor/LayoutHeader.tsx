@@ -15,7 +15,7 @@ type Layout = components['schemas']['Layout'];
 interface LayoutHeaderProps {
   layout: Layout;
   zoneCount: number;
-  saveStatus: 'saved' | 'saving' | 'error';
+  saveStatus: 'saved' | 'saving' | 'error' | 'unsaved';
   onBack: () => void;
 }
 
@@ -50,6 +50,7 @@ export function LayoutHeader({
   const saveStatusConfig = {
     saved: { text: 'All changes saved', color: 'text-green-600', icon: '✓' },
     saving: { text: 'Saving...', color: 'text-yellow-600', icon: '⋯' },
+    unsaved: { text: 'Unsaved changes', color: 'text-orange-600', icon: '●' },
     error: { text: 'Failed to save', color: 'text-red-600', icon: '⚠' },
   };
 

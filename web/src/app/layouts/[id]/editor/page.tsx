@@ -44,7 +44,8 @@ export default function LayoutEditorPage() {
   // State
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | 'unsaved'>('saved');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Data fetching
   const { data: layout, isLoading: layoutLoading, error: layoutError } = useLayout(layoutId);
@@ -145,6 +146,25 @@ export default function LayoutEditorPage() {
     setIsEditMode(false);
   }, []);
 
+  // Manual save handler
+  const handleManualSave = useCallback(() => {
+    if (!hasUnsavedChanges || saveStatus === 'saving') {
+      return; // Nothing to save or already saving
+    }
+
+    console.log('[Manual Save] Triggered by user');
+    // TODO: Implement actual save logic
+    // For now, this is a placeholder that simulates saving
+    setSaveStatus('saving');
+    setHasUnsavedChanges(false);
+
+    // Simulate API call
+    setTimeout(() => {
+      setSaveStatus('saved');
+      console.log('[Manual Save] Complete');
+    }, 500);
+  }, [hasUnsavedChanges, saveStatus]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -153,6 +173,13 @@ export default function LayoutEditorPage() {
       const isTyping = 
         activeElement?.tagName === 'INPUT' ||
         activeElement?.tagName === 'TEXTAREA';
+
+      // Ctrl+S / Cmd+S: Manual save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleManualSave();
+        return;
+      }
 
       // ESC: Cancel/deselect
       if (e.key === 'Escape') {
@@ -171,6 +198,8 @@ export default function LayoutEditorPage() {
           const newRotation = ((currentRotation - step) % 360 + 360) % 360;
           // TODO: Update zone rotation via mutation
           console.log(`Rotate CCW: ${currentRotation}° → ${newRotation}°`);
+          setHasUnsavedChanges(true);
+          setSaveStatus('unsaved');
         }
       }
 
@@ -185,6 +214,8 @@ export default function LayoutEditorPage() {
           const newRotation = (currentRotation + step) % 360;
           // TODO: Update zone rotation via mutation
           console.log(`Rotate CW: ${currentRotation}° → ${newRotation}°`);
+          setHasUnsavedChanges(true);
+          setSaveStatus('unsaved');
         }
       }
 
@@ -199,7 +230,7 @@ export default function LayoutEditorPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedZone, isEditMode, handleDeleteZone, rotationSnap, rotationSnapEnabled]);
+  }, [selectedZone, isEditMode, handleDeleteZone, rotationSnap, rotationSnapEnabled, handleManualSave]);
 
   // Loading state
   if (layoutLoading || zonesLoading || siteLoading) {
@@ -291,7 +322,11 @@ export default function LayoutEditorPage() {
               defaultPosition={{ x: 0, y: 0 }}
               storageKey="editor-toolbar-position"
             >
-              <Toolbar />
+              <Toolbar 
+                onSave={handleManualSave}
+                saveStatus={saveStatus}
+                hasUnsavedChanges={hasUnsavedChanges}
+              />
             </DraggablePanel>
           </div>
 
