@@ -32,7 +32,14 @@ export default function LayoutEditorPage() {
   const layoutId = Number(params.id);
 
   // Editor store
-  const { openQuickStart, snapEnabled, showRuralPanel, setShowRuralPanel } = useEditorStore();
+  const { 
+    openQuickStart, 
+    snapEnabled, 
+    showRuralPanel, 
+    setShowRuralPanel,
+    rotationSnap,
+    rotationSnapEnabled,
+  } = useEditorStore();
 
   // State
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
@@ -141,20 +148,49 @@ export default function LayoutEditorPage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isTyping = 
+        activeElement?.tagName === 'INPUT' ||
+        activeElement?.tagName === 'TEXTAREA';
+
       // ESC: Cancel/deselect
       if (e.key === 'Escape') {
         setSelectedZoneId(null);
         setIsEditMode(false);
       }
 
+      // Q: Rotate counter-clockwise
+      if (e.key === 'q' || e.key === 'Q') {
+        if (!isTyping && selectedZone) {
+          e.preventDefault();
+          const step = rotationSnapEnabled ? rotationSnap : 5;
+          // TODO: Add rotation_deg field to zones schema
+          // const currentRotation = selectedZone.rotation_deg || 0;
+          const currentRotation = 0; // Placeholder until zones support rotation
+          const newRotation = ((currentRotation - step) % 360 + 360) % 360;
+          // TODO: Update zone rotation via mutation
+          console.log(`Rotate CCW: ${currentRotation}° → ${newRotation}°`);
+        }
+      }
+
+      // E: Rotate clockwise
+      if (e.key === 'e' || e.key === 'E') {
+        if (!isTyping && selectedZone) {
+          e.preventDefault();
+          const step = rotationSnapEnabled ? rotationSnap : 5;
+          // TODO: Add rotation_deg field to zones schema
+          // const currentRotation = selectedZone.rotation_deg || 0;
+          const currentRotation = 0; // Placeholder until zones support rotation
+          const newRotation = (currentRotation + step) % 360;
+          // TODO: Update zone rotation via mutation
+          console.log(`Rotate CW: ${currentRotation}° → ${newRotation}°`);
+        }
+      }
+
       // Delete/Backspace: Delete selected zone
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedZone && !isEditMode) {
-        // Only if not editing a text input
-        const activeElement = document.activeElement;
-        if (
-          activeElement?.tagName !== 'INPUT' &&
-          activeElement?.tagName !== 'TEXTAREA'
-        ) {
+        if (!isTyping) {
           e.preventDefault();
           handleDeleteZone();
         }
@@ -163,7 +199,7 @@ export default function LayoutEditorPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedZone, isEditMode, handleDeleteZone]);
+  }, [selectedZone, isEditMode, handleDeleteZone, rotationSnap, rotationSnapEnabled]);
 
   // Loading state
   if (layoutLoading || zonesLoading || siteLoading) {
