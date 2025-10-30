@@ -264,7 +264,7 @@
 
 ## Detailed Sub-Tasks
 
-### T-001: Workbench Page & Navigation ⏳
+### T-001: Workbench Page & Navigation ✅
 
 #### Sub-Tasks:
 - [x] T-001.1: Create Workbench page component (`web/src/app/workbench/page.tsx`)
@@ -302,6 +302,8 @@
   - Show "Sites & Layouts have merged into Workbench"
   - Dismissible, stores state in localStorage
   - Only shows to users who previously accessed `/sites` or `/layouts`
+
+**Status:** ✅ Complete (committed: 4ff0c37)
 
 ---
 
@@ -624,6 +626,6 @@
 
 ## Progress Summary
 
-- **Tasks Completed:** 0 / 10 parent tasks (T-001 pending test verification)
+- **Tasks Completed:** 1 / 10 parent tasks (T-001 ✅)
 - **Sub-Tasks Completed:** 7 / 60 sub-tasks
-- **Current Focus:** T-001 complete, running tests before commit
+- **Current Focus:** T-001 complete and committed. Awaiting user approval to proceed with T-002 (Intent Wizard)
