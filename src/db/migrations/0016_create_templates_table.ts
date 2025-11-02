@@ -22,19 +22,48 @@ export async function up(knex: Knex): Promise<void> {
   await knex.raw(`DROP INDEX IF EXISTS idx_templates_usage_count`);
 
   // Add new columns
-  await knex.schema.alterTable('templates', (table) => {
-    table.string('sport_type', 100);
-    table.jsonb('zones_json').notNullable();
-    table.jsonb('assets_json');
-    table.string('thumbnail_url', 500);
-  });
+  // Add columns individually if missing
+  const addColumn = async (col: string, cb: (table: any) => void) => {
+    const exists = await knex.schema.hasColumn('templates', col);
+    if (!exists) {
+      await knex.schema.alterTable('templates', cb);
+    }
+  };
+
+  await addColumn('sport_type', (table) => table.string('sport_type', 100));
+  await addColumn('zones_json', (table) => table.jsonb('zones_json').notNullable());
+  await addColumn('assets_json', (table) => table.jsonb('assets_json'));
+  await addColumn('thumbnail_url', (table) => table.string('thumbnail_url', 500));
+  await addColumn('created_by', (table) =>
+    table.uuid('created_by')
+      .notNullable()
+      .defaultTo('00000000-0000-0000-0000-000000000000')
+      .references('id')
+      .inTable('users')
+      .onDelete('CASCADE')
+  );
+  await addColumn('preview_geometry', (table) => table.jsonb('preview_geometry').nullable());
+
+  // Backfill preview_geometry and set NOT NULL
+  const hasPreviewGeometry = await knex.schema.hasColumn('templates', 'preview_geometry');
+  if (hasPreviewGeometry) {
+    await knex('templates').update({ preview_geometry: knex.raw("'{}'::jsonb") }).whereNull('preview_geometry');
+    await knex.raw('ALTER TABLE templates ALTER COLUMN preview_geometry SET NOT NULL;');
+  }
+
+  // Backfill created_by with a default UUID before making it NOT NULL
+  // If users table exists, use a valid user id, else use a dummy UUID
+  const dummyUserId = '00000000-0000-0000-0000-000000000000';
+  // Insert dummy user if not exists to satisfy FK constraint
+  await knex.raw(`INSERT INTO users (id, email, clerk_id, tier, is_active, created_at, updated_at) VALUES ('${dummyUserId}', 'migration-dummy@plottr.local', 'migration-dummy-clerk', 'free', true, NOW(), NOW()) ON CONFLICT (id) DO NOTHING`);
+  await knex.raw(`UPDATE templates SET created_by = '${dummyUserId}' WHERE created_by IS NULL`);
 
   // Alter created_by to UUID (drop and re-add)
   await knex.raw(`
     ALTER TABLE templates
     DROP COLUMN created_by,
-    ADD COLUMN created_by UUID;
-    
+    ADD COLUMN created_by UUID NOT NULL DEFAULT '${dummyUserId}';
+
     ALTER TABLE templates
     ADD CONSTRAINT fk_templates_created_by
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
@@ -58,16 +87,34 @@ export async function down(knex: Knex): Promise<void> {
     table.dropColumn('thumbnail_url');
   });
 
+  // Backfill created_by with a default value before NOT NULL constraint
+  const dummyUserId = '00000000-0000-0000-0000-000000000000';
+  // Insert dummy user if not exists to satisfy FK constraint
+  await knex.raw(`INSERT INTO users (id, email, clerk_id, tier, is_active, created_at, updated_at) VALUES ('${dummyUserId}', 'migration-dummy@plottr.local', 'migration-dummy-clerk', 'free', true, NOW(), NOW()) ON CONFLICT (id) DO NOTHING`);
+  await knex.raw(`UPDATE templates SET created_by = '${dummyUserId}' WHERE created_by IS NULL`);
   await knex.raw(`
     ALTER TABLE templates
     DROP CONSTRAINT IF EXISTS fk_templates_created_by,
     DROP COLUMN created_by,
-    ADD COLUMN created_by VARCHAR(100) NOT NULL;
+  ADD COLUMN created_by VARCHAR(100) NOT NULL DEFAULT '${dummyUserId}';
   `);
 
+  // Backfill preview_geometry for NOT NULL constraint BEFORE adding column as NOT NULL
+  const previewGeometryExists = await knex.schema.hasColumn('templates', 'preview_geometry');
+  if (previewGeometryExists) {
+    await knex.raw(`UPDATE templates SET preview_geometry = '{}' WHERE preview_geometry IS NULL`);
+  }
+  // Drop NOT NULL constraint, then drop preview_geometry, then drop created_by
+  const hasPreviewGeometry = await knex.schema.hasColumn('templates', 'preview_geometry');
+  if (hasPreviewGeometry) {
+    await knex.raw('ALTER TABLE templates ALTER COLUMN preview_geometry DROP NOT NULL;');
+    await knex.schema.alterTable('templates', (table) => {
+      table.dropColumn('preview_geometry');
+    });
+  }
   await knex.schema.alterTable('templates', (table) => {
+    table.dropColumn('created_by');
     table.specificType('tags', 'TEXT[]');
-    table.jsonb('preview_geometry').notNullable();
     table.integer('usage_count').notNullable().defaultTo(0);
   });
 

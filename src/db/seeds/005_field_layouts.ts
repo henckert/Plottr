@@ -195,7 +195,7 @@ export async function seed(knex: Knex): Promise<void> {
     assets.push({
       layout_id: layout.id,
       name: 'Center Line',
-      asset_type: 'line',
+      asset_type: 'other', // Line markings don't have a specific type in enum
       geometry: knex.raw(`ST_GeogFromText('LINESTRING(${lon - 0.0006} ${lat}, ${lon + 0.0006} ${lat})')`),
       properties: { width_m: 0.12, color: '#ffffff', line_type: 'solid' },
     });
@@ -235,7 +235,8 @@ export async function seed(knex: Knex): Promise<void> {
         { name: 'SE Corner Flag', asset_type: 'flag', icon: 'fa-flag' },
       ]),
       is_public: true,
-      created_by: null, // No specific user (public template)
+      created_by: '00000000-0000-0000-0000-000000000000',
+      preview_geometry: { type: 'Polygon', coordinates: [[[0,0],[0,1],[1,1],[1,0],[0,0]]] },
     },
     {
       name: 'Training Pitch 7v7',
@@ -254,7 +255,8 @@ export async function seed(knex: Knex): Promise<void> {
         { name: 'Training Cone 4', asset_type: 'cone', icon: 'fa-cone-striped' },
       ]),
       is_public: true,
-      created_by: null,
+      created_by: '00000000-0000-0000-0000-000000000000',
+      preview_geometry: { type: 'Polygon', coordinates: [[[0,0],[0,1],[1,1],[1,0],[0,0]]] },
     },
     {
       name: 'Multi-Zone Training Complex',
@@ -272,7 +274,8 @@ export async function seed(knex: Knex): Promise<void> {
         { name: 'Marker 2', asset_type: 'marker', icon: 'fa-bullseye' },
       ]),
       is_public: false,
-      created_by: null,
+      created_by: '00000000-0000-0000-0000-000000000000',
+      preview_geometry: { type: 'Polygon', coordinates: [[[0,0],[0,1],[1,1],[1,0],[0,0]]] },
     },
   ];
 
