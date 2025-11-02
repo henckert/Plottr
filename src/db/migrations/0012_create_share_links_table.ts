@@ -23,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('slug', 12).notNullable().unique(); // e.g., "a1B2c3D4e5F6"
     table.timestamp('expires_at', { useTz: true }); // NULL = no expiry
     table.boolean('is_revoked').notNullable().defaultTo(false);
-    table.integer('access_count').notNullable().defaultTo(0);
+    table.integer('view_count').notNullable().defaultTo(0);
     table.string('created_by', 100).notNullable(); // Clerk user ID
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.timestamp('last_accessed_at', { useTz: true });
