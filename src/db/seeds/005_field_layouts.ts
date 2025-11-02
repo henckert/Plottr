@@ -291,7 +291,7 @@ export async function seed(knex: Knex): Promise<void> {
       slug: `demo${i + 1}xyz`,
       expires_at: i === 0 ? null : knex.raw(`NOW() + INTERVAL '${30 + i * 30} days'`), // First is permanent
       is_revoked: false,
-      access_count: Math.floor(Math.random() * 20),
+      view_count: Math.floor(Math.random() * 20),
       created_by: 'seed-user-1',
     });
   }
