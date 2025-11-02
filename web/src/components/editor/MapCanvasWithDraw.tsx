@@ -532,8 +532,19 @@ export function MapCanvasWithDraw({
     // Get map center as default placement
     const center = map.current.getCenter();
     
+    // Convert template to legacy format for createPitchFromTemplate
+    // TODO: Refactor to use new template system consistently
+    const templateAny = template as any;
+    const legacyTemplate = {
+      ...template,
+      width_m: templateAny.defaultDimensions?.width || templateAny.width_m || 100,
+      length_m: templateAny.defaultDimensions?.length || templateAny.length_m || 60,
+      sport: templateAny.sportType || templateAny.sport || 'Unknown',
+      description: templateAny.description || '',
+    } as any;
+    
     // Create polygon from template
-    const polygon = createPitchFromTemplate(template, center.lng, center.lat, 0);
+    const polygon = createPitchFromTemplate(legacyTemplate, center.lng, center.lat, 0);
     
     // Add to draw as a new feature
     const featureId = draw.current.add({
@@ -553,7 +564,7 @@ export function MapCanvasWithDraw({
       zone_type: 'pitch',
       surface_type: 'grass',
       color: getZoneColor('pitch'),
-      notes: `${template.sport} - ${template.description || ''}`,
+      notes: `${legacyTemplate.sport} - ${legacyTemplate.description}`,
       geometry: polygon,
       area_m2: area.m2,
       perimeter_m: perimeter.m,

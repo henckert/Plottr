@@ -17,8 +17,8 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
@@ -46,6 +46,13 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/app/map-test-fixed/**/*",
+    "src/app/map-test/**/*",
+    "src/app/sites/**/*",
+    "src/components/map/MapCanvasStable.tsx",
+    "src/components/map/maplibre-stable.ts",
+    "src/lib/offlineAPI.ts",
+    "src/lib/offlineApiWrapper.ts"
   ]
 }

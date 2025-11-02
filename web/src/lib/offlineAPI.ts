@@ -48,15 +48,15 @@ class OfflineAPI {
   }
 
   async cacheVenue(venue: Venue): Promise<void> {
-    await cacheManager.set('venues', venue.id, venue, 7 * 24 * 60 * 60 * 1000); // 7 days
+    await cacheManager.set('venues', String(venue.id), venue, 7 * 24 * 60 * 60 * 1000); // 7 days
   }
 
   async cachePitch(pitch: Pitch): Promise<void> {
-    await cacheManager.set('pitches', pitch.id, pitch, 7 * 24 * 60 * 60 * 1000); // 7 days
+    await cacheManager.set('pitches', String(pitch.id), pitch, 7 * 24 * 60 * 60 * 1000); // 7 days
   }
 
   async cacheSession(session: Session): Promise<void> {
-    await cacheManager.set('sessions', session.id, session, 24 * 60 * 60 * 1000); // 1 day
+    await cacheManager.set('sessions', String(session.id), session, 24 * 60 * 60 * 1000); // 1 day
   }
 
   async getCachedVenue(id: string): Promise<Venue | null> {

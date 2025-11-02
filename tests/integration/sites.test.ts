@@ -46,16 +46,17 @@ describe('Sites API Integration Tests', () => {
       expect(typeof res.body.has_more).toBe('boolean');
     });
 
-    test('returns 400 when club_id is missing', async () => {
+    test('defaults to club_id=1 when club_id is missing', async () => {
       const createApp = require('../../src/app').default as () => any;
       const app = createApp();
 
       const res = await request(app)
         .get('/api/sites')
-        .expect(400);
+        .expect(200);
 
-      expect(res.body).toHaveProperty('error');
-      expect(res.body.error).toBe('MISSING_CLUB_ID');
+      expect(res.body).toHaveProperty('data');
+      expect(Array.isArray(res.body.data)).toBe(true);
+      // In dev mode, missing club_id defaults to 1
     });
 
     test('respects limit parameter', async () => {

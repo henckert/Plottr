@@ -27,6 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('created_by', 100).notNullable(); // Clerk user ID
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.timestamp('last_accessed_at', { useTz: true });
+      table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
   });
 
   // Create indexes for common query patterns

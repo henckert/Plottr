@@ -29,6 +29,19 @@ export class AssetsRepository {
   }
 
   /**
+   * Map database row to AssetRow (converts DECIMAL rotation_deg to number, dates to ISO strings, parses JSON properties)
+   */
+  private mapRow(raw: any): AssetRow {
+    return {
+      ...raw,
+      rotation_deg: raw.rotation_deg ? parseFloat(raw.rotation_deg) : null,
+      created_at: raw.created_at instanceof Date ? raw.created_at.toISOString() : raw.created_at,
+      updated_at: raw.updated_at instanceof Date ? raw.updated_at.toISOString() : raw.updated_at,
+      properties: typeof raw.properties === 'string' ? JSON.parse(raw.properties) : raw.properties,
+    };
+  }
+
+  /**
    * List assets with optional filters and cursor-based pagination
    */
   async list(params: {
@@ -82,7 +95,8 @@ export class AssetsRepository {
       query = query.limit(params.limit);
     }
 
-    return await query;
+    const rows = await query;
+    return rows.map(row => this.mapRow(row));
   }
 
   /**
@@ -107,7 +121,7 @@ export class AssetsRepository {
       .where({ id })
       .first();
 
-    return row || null;
+    return row ? this.mapRow(row) : null;
   }
 
   /**

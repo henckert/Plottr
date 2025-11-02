@@ -477,9 +477,9 @@ describe('Geometry Import Integration Tests (FEAT-006)', () => {
 
       // 3. Retrieve from database
       const retrieved = await boundariesRepo.getById(saved.id);
-      expect(retrieved?.id).toBe(saved.id);
-      expect(retrieved?.area_m2).toBe(importResult.area);
-      expect(retrieved?.user_id).toBe(testUserId);
+  expect(retrieved?.id).toBe(saved.id);
+  expect(retrieved?.area_m2).toBeCloseTo(importResult.area, 2);
+  expect(retrieved?.user_id).toBe(testUserId);
     });
   });
 

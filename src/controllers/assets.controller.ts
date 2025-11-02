@@ -45,16 +45,13 @@ export async function listAssets(req: Request, res: Response, next: NextFunction
       (item: any) => item.updated_at
     );
 
-    const parsed = AssetsListResponseSchema.safeParse({ data: paginated.data });
+    const parsed = AssetsListResponseSchema.safeParse(paginated);
     if (!parsed.success) {
+      console.error('[VALIDATION ERROR]', JSON.stringify(parsed.error.errors, null, 2));
       throw new AppError('VALIDATION_ERROR', 500, parsed.error.message);
     }
 
-    return res.json({
-      data: paginated.data,
-      next_cursor: paginated.next_cursor,
-      has_more: paginated.has_more,
-    });
+    return res.json(parsed.data);
   } catch (err) {
     next(err);
   }

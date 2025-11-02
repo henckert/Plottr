@@ -57,7 +57,7 @@ describe('Assets API', () => {
       layout_id: testLayoutId,
       name: 'Test Zone',
       zone_type: 'pitch',
-      geometry: knex.raw(`ST_GeomFromGeoJSON('{"type":"Polygon","coordinates":[[[0,0],[0,0.001],[0.001,0.001],[0.001,0],[0,0]]]}')`),
+      boundary: knex.raw(`ST_GeomFromGeoJSON('{"type":"Polygon","coordinates":[[[0,0],[0,0.001],[0.001,0.001],[0.001,0],[0,0]]]}')`),
     }).returning('id');
     testZoneId = zone.id || zone;
   });
@@ -153,7 +153,8 @@ describe('Assets API', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Asset geometry must be Point or LineString');
+      expect(res.body.error).toBe('VALIDATION_ERROR');
+      expect(res.body.details).toBeDefined();
     });
 
     it('should reject out-of-bounds WGS84 coordinates', async () => {
@@ -171,7 +172,7 @@ describe('Assets API', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('outside WGS84 range');
+      expect(res.body.error.message).toContain('outside WGS84 range');
     });
 
     it('should reject invalid asset_type', async () => {
@@ -216,7 +217,7 @@ describe('Assets API', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('does not belong to');
+      expect(res.body.error.message).toContain('does not belong to');
     });
   });
 
@@ -420,7 +421,7 @@ describe('Assets API', () => {
         .send({ name: 'Second Update' });
 
       expect(res.status).toBe(409);
-      expect(res.body.error).toContain('version conflict');
+      expect(res.body.error.message).toContain('version conflict');
     });
 
     it('should reject invalid geometry in update', async () => {

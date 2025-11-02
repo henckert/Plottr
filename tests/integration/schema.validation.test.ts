@@ -15,13 +15,15 @@ describe('Schema Validation Tests', () => {
   beforeAll(async () => {
     knex = getKnex();
     // Run migrations to set up test database
+    await knex.migrate.rollback(undefined, true); // Ensure clean DB
     await knex.migrate.latest();
-    
-    // Create a test club for foreign key references
+
+    // Create a test club for foreign key references with unique slug
+    const uniqueSlug = `test-club-${Date.now()}-${Math.floor(Math.random()*10000)}`;
     const [club] = await knex('clubs').insert({
       name: 'Test Club',
-      slug: 'test-club',
-      created_by: 1,
+      slug: uniqueSlug,
+      created_by: `test-user-${Date.now()}`,
     }).returning('id');
     testClubId = club.id;
   });
