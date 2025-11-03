@@ -112,9 +112,15 @@ NODE_ENV=development
 # API
 API_PORT=3000
 
-# Mapbox (optional for geocoding)
-MAPBOX_TOKEN=your_token_here
+# Geocoding Configuration (see docs/GEOCODING_CONFIG.md)
+GEOCODER_PROVIDER=mapbox              # Options: 'mapbox' (default) or 'nominatim'
+MAPBOX_ACCESS_TOKEN=your_token_here   # Mapbox API token
+MAPBOX_LANGUAGE=en                    # Language for geocoding results
+MAPBOX_COUNTRY_BIAS=ie                # Default country bias (ISO 3166-1)
+MAPBOX_PROXIMITY=-6.2603,53.3498      # Proximity point (Dublin lng,lat)
 ```
+
+**Geocoding**: PlotIQ supports both Mapbox Geocoding API and Nominatim (OpenStreetMap). Set `GEOCODER_PROVIDER=mapbox` to use Mapbox (requires token), or `GEOCODER_PROVIDER=nominatim` for the free OSM service. The system includes special Eircode (Irish postal code) detection with automatic fallback. See [Geocoding Configuration](docs/GEOCODING_CONFIG.md) for details.
 
 ## API Endpoints
 

@@ -11,5 +11,14 @@ export function getConfig() {
     MAPBOX_TOKEN: process.env.MAPBOX_TOKEN || null,
     AUTH_REQUIRED: process.env.AUTH_REQUIRED === 'true' ? true : false,
     DEV_TOKEN: process.env.DEV_TOKEN || 'dev-token-placeholder',
+    
+    // Geocoding configuration
+    geocoder: {
+      provider: (process.env.GEOCODER_PROVIDER ?? 'mapbox').toLowerCase(),
+      mapboxToken: process.env.MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_TOKEN ?? '',
+      language: process.env.MAPBOX_LANGUAGE ?? 'en',
+      countryBias: (process.env.MAPBOX_COUNTRY_BIAS ?? 'ie').toLowerCase(),
+      proximity: process.env.MAPBOX_PROXIMITY ?? '-6.2603,53.3498', // Dublin lng,lat
+    },
   } as const;
 }

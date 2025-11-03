@@ -66,6 +66,7 @@ export async function create(data: CreateShareLinkInput, userId?: string): Promi
     layout_id: data.layout_id,
     slug,
     expires_at: data.expires_at || null,
+    created_by: userId || null, // Pass user ID for tracking
   });
 
   return mapRow(shareLink);

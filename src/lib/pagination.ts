@@ -18,9 +18,12 @@ export interface CursorPaginationResponse<T> {
 /**
  * Encodes a cursor as base64 for transport in URLs/APIs.
  * Cursor format: `{id}:{sortValue}`
+ * Handles Date objects by converting to ISO strings
  */
 export function encodeCursor(id: number, sortValue: any): string {
-  const cursor = `${id}:${sortValue}`;
+  // Convert Date objects to ISO strings for consistent encoding
+  const sortValueStr = sortValue instanceof Date ? sortValue.toISOString() : String(sortValue);
+  const cursor = `${id}:${sortValueStr}`;
   return Buffer.from(cursor).toString('base64');
 }
 

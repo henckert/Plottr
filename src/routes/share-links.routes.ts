@@ -2,7 +2,11 @@ import { Router } from 'express';
 import * as controller from '@/controllers/share-links.controller';
 import { authMiddleware } from '@/middleware/auth';
 
-const router = Router();
+// API router for authenticated endpoints
+const apiRouter = Router();
+
+// Public router for anonymous access (no auth required)
+export const publicShareRouter = Router();
 
 /**
  * Share Links Routes
@@ -18,11 +22,14 @@ const router = Router();
  * - GET /share/:slug - Public share view
  */
 
-// Protected endpoints
-router.post('/', authMiddleware, controller.createShareLink);
-router.get('/', authMiddleware, controller.listShareLinks);
-router.get('/:id', authMiddleware, controller.getShareLink);
-router.put('/:id', authMiddleware, controller.updateShareLink);
-router.delete('/:id', authMiddleware, controller.deleteShareLink);
+// Protected endpoints (mounted at /api/share-links)
+apiRouter.post('/', authMiddleware, controller.createShareLink);
+apiRouter.get('/', authMiddleware, controller.listShareLinks);
+apiRouter.get('/:id', authMiddleware, controller.getShareLink);
+apiRouter.put('/:id', authMiddleware, controller.updateShareLink);
+apiRouter.delete('/:id', authMiddleware, controller.deleteShareLink);
 
-export default router;
+// Public endpoint (mounted at /share/:slug)
+publicShareRouter.get('/:slug', controller.getPublicShareView);
+
+export default apiRouter;

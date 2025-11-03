@@ -18,12 +18,12 @@ export async function geocode(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Forward geocoding using Nominatim (address to coordinates)
- * GET /api/geocode/search?q=...&country=IE&limit=5
+ * Forward geocoding using configured provider (address to coordinates)
+ * GET /api/geocode/search?q=...&country=IE&limit=5&proximity=-6.26,53.35
  */
 export async function searchGeocode(req: Request, res: Response, next: NextFunction) {
   try {
-    const { q, limit = '5', country } = req.query;
+    const { q, limit = '5', country, proximity } = req.query;
 
     if (!q || typeof q !== 'string') {
       return res.status(400).json({
@@ -34,8 +34,19 @@ export async function searchGeocode(req: Request, res: Response, next: NextFunct
       });
     }
 
-    const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : 5;
+    // Clamp limit to [1, 10], default 5
+    let parsedLimit = 5;
+    if (typeof limit === 'string') {
+      parsedLimit = parseInt(limit, 10);
+      if (isNaN(parsedLimit) || parsedLimit < 1) {
+        parsedLimit = 5;
+      } else if (parsedLimit > 10) {
+        parsedLimit = 10;
+      }
+    }
+
     const countryCode = typeof country === 'string' ? country : undefined;
+    const proximityStr = typeof proximity === 'string' ? proximity : undefined;
 
     const results = await geocodeService.nominatimSearch(
       q,

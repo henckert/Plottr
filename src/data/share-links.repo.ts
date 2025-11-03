@@ -23,6 +23,7 @@ export interface CreateShareLinkInput {
   layout_id: number;
   slug: string;
   expires_at?: string | null;
+  created_by?: string | null; // Clerk user ID (optional)
 }
 
 export interface UpdateShareLinkInput {
@@ -67,6 +68,7 @@ export async function create(data: CreateShareLinkInput): Promise<ShareLinkRow> 
       layout_id: data.layout_id,
       slug: data.slug,
       expires_at: data.expires_at || null,
+      created_by: data.created_by || null,
       view_count: 0,
       created_at: knex.fn.now(),
       updated_at: knex.fn.now(),
@@ -146,7 +148,14 @@ export async function list(
   // Apply cursor pagination
   if (cursor) {
     const decoded = decodeCursor(cursor);
-    query = query.where('id', '>', decoded.id);
+    // Use proper cursor pagination: created_at < cursor_value OR (created_at = cursor_value AND id < cursor_id)
+    // Since we're ordering by created_at DESC, we want rows BEFORE the cursor
+    query = query.where((qb) => {
+      qb.where('created_at', '<', decoded.sortValue)
+        .orWhere((qb2) => {
+          qb2.where('created_at', '=', decoded.sortValue).where('id', '<', decoded.id);
+        });
+    });
   }
 
   return await query;

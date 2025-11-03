@@ -213,38 +213,41 @@ export async function getPublicShareView(
 
     // Return public view (no sensitive data)
     return res.json({
-      layout: {
-        id: layout.id,
-        name: layout.name,
-        description: layout.description,
-        is_published: layout.is_published,
-        created_at: layout.created_at,
-        updated_at: layout.updated_at,
-      },
-      zones: zones.map((z: any) => ({
-        id: z.id,
-        name: z.name,
-        zone_type: z.zone_type,
-        geometry: z.boundary, // Note: zones use 'boundary' not 'geometry'
-        color: z.color,
-        surface: z.surface,
-        notes: null, // zones don't have notes field
-        area_sqm: z.area_sqm,
-        perimeter_m: z.perimeter_m,
-      })),
-      assets: assets.map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        asset_type: a.asset_type,
-        geometry: a.geometry,
-        icon: a.icon,
-        rotation_deg: a.rotation_deg,
-        properties: a.properties,
-      })),
-      share_link: {
-        slug: share_link.slug,
-        view_count: share_link.view_count,
-        last_accessed_at: share_link.last_accessed_at,
+      data: {
+        layout: {
+          id: layout.id,
+          name: layout.name,
+          description: layout.description,
+          is_published: layout.is_published,
+          created_at: layout.created_at,
+          updated_at: layout.updated_at,
+        },
+        zones: zones.map((z: any) => ({
+          id: z.id,
+          name: z.name,
+          zone_type: z.zone_type,
+          geometry: z.boundary, // Note: zones use 'boundary' not 'geometry'
+          color: z.color,
+          surface: z.surface,
+          notes: null, // zones don't have notes field
+          area_sqm: z.area_sqm,
+          perimeter_m: z.perimeter_m,
+        })),
+        assets: assets.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          asset_type: a.asset_type,
+          geometry: a.geometry,
+          icon: a.icon,
+          rotation_deg: a.rotation_deg,
+          properties: a.properties,
+        })),
+        share_link: {
+          slug: share_link.slug,
+          view_count: share_link.view_count,
+          last_accessed_at: share_link.last_accessed_at,
+          created_at: share_link.created_at,
+        },
       },
     });
   } catch (err) {

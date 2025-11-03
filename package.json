@@ -9,6 +9,7 @@
     "build": "tsc -p .",
     "start": "node ./dist/index.js",
     "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "dev:geocode:smoke": "ts-node -r tsconfig-paths/register scripts/smoke/geocode.ts",
     "migrate": "knex --knexfile src/db/knexfile.ts migrate:latest",
     "migrate:rollback": "knex --knexfile src/db/knexfile.ts migrate:rollback",
     "seed": "knex --knexfile src/db/knexfile.ts seed:run",
